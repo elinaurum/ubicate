@@ -1,0 +1,299 @@
+[
+  {
+    "id": "B04",
+    "edificio_id": "851_INDUS",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B03",
+    "edificio_id": "851_INDUS",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B02",
+    "edificio_id": "851_INDUS",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B01",
+    "edificio_id": "851_INDUS",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B08",
+    "edificio_id": "851_INGMEC",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1; B08 está en el pasillo de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B07",
+    "edificio_id": "851_INGMEC",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1; B07 está en el pasillo de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B06",
+    "edificio_id": "851_INGQUIM",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1; B06 está en el pasillo de salas B.",
+    "activo": true
+  },
+  {
+    "id": "B05",
+    "edificio_id": "851_INGMEC",
+    "piso": -1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Entra por Beauchef 851, baja al piso -1; B05 está en el pasillo de salas B.",
+    "activo": true
+  },
+  {
+    "id": "F21",
+    "edificio_id": "850_FIS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Física, sube las escaleras y sigue la señalética de las salas F.",
+    "activo": true
+  },
+  {
+    "id": "F10",
+    "edificio_id": "850_FIS",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Física, a mitad del pasillo principal se encuentra la sala.",
+    "activo": true
+  },
+  {
+    "id": "F22",
+    "edificio_id": "850_FIS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Física, sube las escaleras y sigue las señaléticas de las salas F.",
+    "activo": true
+  },
+  {
+    "id": "QP",
+    "edificio_id": "850_MINAS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Química, sube las escaleras y sigue las señaléticas de las salas Q, la sala se encuentra en el sector poniente (oeste) del edificio.",
+    "activo": true
+  },
+  {
+    "id": "QO",
+    "edificio_id": "850_MINAS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Química, sube las escaleras y sigue las señaléticas de las salas Q, la sala se encuentra en el sector oriente (al este) del edificio.",
+    "activo": true
+  },
+  {
+    "id": "Q10",
+    "edificio_id": "850_MINAS",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Química, a mitad del pasillo principal se encuentra la sala.",
+    "activo": true
+  },
+  {
+    "id": "Q21",
+    "edificio_id": "850_MINAS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Química, sube las escaleras, por el lado oriente (al este) del segundo piso avanza por el pasillo que sale al sur y luego a la izquierda por el pasillo de los baños.",
+    "activo": true
+  },
+  {
+    "id": "Q22",
+    "edificio_id": "850_MINAS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Química, sube las escaleras, por el lado oriente (al este) del segundo piso avanza por el pasillo que sale al sur y luego a la izquierda por el pasillo de los baños.",
+    "activo": true
+  },
+  {
+    "id": "Q23",
+    "edificio_id": "850_MINAS",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Química, sube las escaleras, por el lado oriente (al este) del segundo piso avanza por el pasillo que sale al sur y luego a la izquierda por el pasillo de los baños.",
+    "activo": true
+  },
+  {
+    "id": "S15",
+    "edificio_id": "850_HALL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” ve por el pasillo a mano derecha. Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S17",
+    "edificio_id": "850_HALL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” ve por el pasillo a mano derecha. Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S18",
+    "edificio_id": "850_HALL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” ve por el pasillo a mano derecha. Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S19",
+    "edificio_id": "850_HALL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” ve por el pasillo a mano derecha. Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S14",
+    "edificio_id": "850_HALL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” ve por el pasillo a mano derecha. Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S24",
+    "edificio_id": "850_HALL",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” sube las escaleras, ve por el pasillo a mano izquierda (hacia el sur). Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S25",
+    "edificio_id": "850_HALL",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” sube las escaleras, ve por el pasillo a mano izquierda (hacia el sur). Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S26",
+    "edificio_id": "850_HALL",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” sube las escaleras, ve por el pasillo a mano izquierda (hacia el sur). Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S27",
+    "edificio_id": "850_HALL",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” sube las escaleras, ve por el pasillo a mano izquierda (hacia el sur). Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S28",
+    "edificio_id": "850_HALL",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” sube las escaleras, ve por el pasillo a mano izquierda (hacia el sur). Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "S29",
+    "edificio_id": "850_HALL",
+    "piso": 2,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, al entrar al edificio escuela, al encontrarse con “la mona” sube las escaleras, ve por el pasillo a mano izquierda (hacia el sur). Sigue las señaléticas de las salas S.",
+    "activo": true
+  },
+  {
+    "id": "E111",
+    "edificio_id": "850_INGEL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Eléctrica, ve por el pasillo a mano derecha (hacia el sur). Al chocar con la puerta de salida hacia Tupper ve a mano izquierda. Sigue las señaléticas de las salas E.",
+    "activo": true
+  },
+  {
+    "id": "E213",
+    "edificio_id": "850_INGEL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Eléctrica, sube al segundo piso, avanza al pasillo y sigue las señaléticas de las salas E.",
+    "activo": true
+  },
+  {
+    "id": "E214",
+    "edificio_id": "850_INGEL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Eléctrica, sube al segundo piso, avanza al pasillo y sigue las señaléticas de las salas E.",
+    "activo": true
+  },
+  {
+    "id": "E215",
+    "edificio_id": "850_INGEL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Eléctrica, sube al segundo piso, avanza al pasillo y sigue las señaléticas de las salas E.",
+    "activo": true
+  },
+  {
+    "id": "E216",
+    "edificio_id": "850_INGEL",
+    "piso": 1,
+    "tipo": "clase",
+    "aliases": [],
+    "instrucciones": "Accede por Beauchef 850, entra al edificio de Eléctrica, sube al segundo piso, avanza al pasillo y sigue las señaléticas de las salas E.",
+    "activo": true
+  }
+]

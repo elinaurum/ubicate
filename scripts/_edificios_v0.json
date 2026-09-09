@@ -1,0 +1,191 @@
+[
+{
+"id": "850_GEOL",
+"nombre": "Geología",
+"aliases": ["geologia", "850_geologia"],
+"coord": [2175, 565],
+"descripcion": "Edificio de Geología, parte del campus sur. Acceso por Beauchef 850."
+},
+{
+"id": "850_IDIEM",
+"nombre": "IDIEM",
+"aliases": ["idiem", "instituto"],
+"coord": [2136, 1038],
+"descripcion": "Instituto de Investigaciones y Estudios en Minería. Acceso por Beauchef 850."
+},
+{
+"id": "850_CSN",
+"nombre": "Centro Sismológico Nacional",
+"aliases": ["csn", "sismologico"],
+"coord": [1985, 689],
+"descripcion": "Centro Sismológico Nacional, dedicado a estudios sísmicos. Acceso por Beauchef 850."
+},
+{
+"id": "850_INGCIV",
+"nombre": "Ingeniería Civil",
+"aliases": ["civil", "ingcivil"],
+"coord": [1845, 370],
+"descripcion": "Facultad de Ingeniería Civil. Acceso por Beauchef 850."
+},
+{
+"id": "850_GEOFIS",
+"nombre": "Geofísica",
+"aliases": ["geofisica", "850_geofisica"],
+"coord": [1660, 571],
+"descripcion": "Departamento de Geofísica. Acceso por Beauchef 850."
+},
+{
+"id": "850_CENER",
+"nombre": "Centro de Energía",
+"aliases": ["cener", "energia"],
+"coord": [1899, 902],
+"descripcion": "Centro de Energía, investigación en fuentes energéticas. Acceso por Beauchef 850."
+},
+{
+"id": "850_AMTC",
+"nombre": "AMTC",
+"aliases": ["amtc", "tecnologia"],
+"coord": [1828, 901],
+"descripcion": "Centro de Investigación en Tecnologías de Energía. Acceso por Beauchef 850."
+},
+{
+"id": "850_INGEL",
+"nombre": "Ingeniería Eléctrica",
+"aliases": ["electrica", "ingelectrica"],
+"coord": [1704, 1074],
+"descripcion": "Departamento de Ingeniería Eléctrica. Acceso por Beauchef 850."
+},
+{
+"id": "850_FIS",
+"nombre": "Física",
+"aliases": ["fisica", "850_fisica"],
+"coord": [1202, 506],
+"descripcion": "Departamento de Física. Acceso por Beauchef 850."
+},
+{
+"id": "850_TORRE",
+"nombre": "Torre Central",
+"aliases": ["torre", "850_torre"],
+"coord": [1441, 799],
+"descripcion": "Torre Central del campus. Acceso por Beauchef 850."
+},
+{
+"id": "850_MINAS",
+"nombre": "Ingeniería de Minas",
+"aliases": ["minas", "850_minas"],
+"coord": [1200, 1050],
+"descripcion": "Departamento de Ingeniería de Minas. Acceso por Beauchef 850."
+},
+{
+"id": "850_CANCHA",
+"nombre": "Cancha de 850",
+"aliases": ["cancha850", "campo"],
+"coord": [1119, 792],
+"descripcion": "Cancha deportiva del campus 850. Acceso por Beauchef 850."
+},
+{
+"id": "850_CAFETERIA",
+"nombre": "Cafetería",
+"aliases": ["cafeteria", "comedor"],
+"coord": [940, 802],
+"descripcion": "Cafetería del campus 850. Acceso por Beauchef 850."
+},
+{
+"id": "850_ESCUELA",
+"nombre": "Edificio Escuela",
+"aliases": ["escuela", "850_escuela"],
+"coord": [690, 798],
+"descripcion": "Edificio de la Escuela de Ingeniería. Acceso por Beauchef 850."
+},
+{
+"id": "850_AUDITORIO",
+"nombre": "Auditorio Gorbea",
+"aliases": ["auditorio", "gorbea"],
+"coord": [755, 1044],
+"descripcion": "Auditorio Gorbea, utilizado para conferencias. Acceso por Beauchef 850."
+},
+{
+"id": "850_HALL",
+"nombre": "Hall Sur",
+"aliases": ["hallsur", "hall"],
+"coord": [827, 1103],
+"descripcion": "Hall Sur del campus 850. Acceso por Beauchef 850."
+},
+{
+"id": "850_BIBLIOTECA",
+"nombre": "Biblioteca",
+"aliases": ["biblioteca", "850_biblioteca"],
+"coord": [786, 502],
+"descripcion": "Biblioteca central del campus 850. Acceso por Beauchef 850."
+},
+{
+"id": "850_CASINO",
+"nombre": "Casino",
+"aliases": ["casino", "850_casino"],
+"coord": [806, 192],
+"descripcion": "Casino de la Facultad. Acceso por Beauchef 850."
+},
+{
+"id": "851_INDUS",
+"nombre": "Ingeniería Industrial",
+"aliases": ["industrial", "851_industrial"],
+"coord": [360, 968],
+"descripcion": "Edificio de Ingeniería Industrial, acceso principal por Beauchef 851."
+},
+{
+"id": "851_AUDITORIO",
+"nombre": "Auditorio d'Etigny",
+"aliases": ["auditorio", "etigny"],
+"coord": [284, 1116],
+"descripcion": "Auditorio d'Etigny, usado para conferencias y eventos."
+},
+{
+"id": "851_INGMEC",
+"nombre": "Ingeniería Mecánica",
+"aliases": ["mecanica", "851_mecanica"],
+"coord": [184, 786],
+"descripcion": "Departamento de Ingeniería Mecánica. Acceso por Beauchef 851."
+},
+{
+"id": "851_INGQUIM",
+"nombre": "Ingeniería Química, Biotecnología y Materiales",
+"aliases": ["quimica", "biotecnologia", "materiales"],
+"coord": [154, 1040],
+"descripcion": "Departamento de Ingeniería Química, Biotecnología y Materiales. Acceso por Beauchef 851."
+},
+{
+"id": "851_INGMAT",
+"nombre": "Ingeniería Matemática",
+"aliases": ["matematica", "851_matematica"],
+"coord": [256, 318],
+"descripcion": "Departamento de Ingeniería Matemática. Acceso por Beauchef 851."
+},
+{
+"id": "851_CS_COMPUTACION",
+"nombre": "Cs. de la Computación",
+"aliases": ["computacion", "cscomputacion"],
+"coord": [284, 368],
+"descripcion": "Departamento de Ciencias de la Computación. Acceso por Beauchef 851."
+},
+{
+"id": "851_CMM",
+"nombre": "CMM",
+"aliases": ["cmm", "matematicas"],
+"coord": [380, 390],
+"descripcion": "Centro de Modelamiento Matemático. Acceso por Beauchef 851."
+},
+{
+"id": "ACCESO_850",
+"nombre": "Acceso Beauchef 850",
+"aliases": ["acceso850", "entrada850"],
+"coord": [618, 806],
+"descripcion": "Acceso principal al edificio 850 desde la calle Beauchef."
+},
+{
+"id": "ACCESO_851",
+"nombre": "Acceso Beauchef 851",
+"aliases": ["acceso851", "entrada851"],
+"coord": [533, 800],
+"descripcion": "Acceso principal al edificio 851 desde la calle Beauchef."
+}
+]
