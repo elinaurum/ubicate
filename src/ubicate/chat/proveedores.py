@@ -168,7 +168,23 @@ class ProveedorOpenAI:
             )
         except Exception as exc:  # pragma: no cover
             raise ErrorProveedor(str(exc)) from exc
-        return respuesta.choices[0].message.content or ""
+
+        eleccion = respuesta.choices[0]
+        texto = (eleccion.message.content or "").strip()
+        razon = (getattr(eleccion, "finish_reason", "") or "").lower()
+
+        if razon and razon != "stop":
+            log.warning("proveedor %s terminó con finish_reason=%r", self.nombre, razon)
+        if not texto:
+            raise ErrorProveedor(f"el modelo no devolvió texto (finish_reason={razon or 'desconocido'})")
+        # Gemini corta la generación cuando detecta que está copiando el
+        # contexto casi textual ("recitation"). El texto queda a media frase.
+        if razon in {"content_filter", "recitation", "safety"}:
+            raise ErrorProveedor(
+                f"el modelo bloqueó su propia respuesta (finish_reason={razon}); "
+                "suele pasar cuando repite el contexto textualmente en vez de reformularlo"
+            )
+        return texto
 
 
 def crear_proveedor(settings: Settings) -> Proveedor:

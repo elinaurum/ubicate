@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-from ubicate.busqueda.normalizacion import tokens
+from ubicate.busqueda.normalizacion import tokens as _tokens
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +30,26 @@ K1 = 1.5
 B = 0.75
 MIN_CARACTERES = 60
 RE_TITULO = re.compile(r"^\s*(?:#{1,6}\s*)?\*\*(.+?)\*\*")
+
+# Palabras de pregunta y muletillas que no distinguen un fragmento de otro. Se
+# suman a las vacías de la normalización, que están pensadas para "sala B04" y
+# no para prosa: sin esto, "¿dónde puedo estudiar?" recupera cualquier fragmento
+# cuyo título empiece con "¿Dónde puedo…?" (ping pong incluido).
+VACIAS_TEXTO = frozenset(
+    {
+        "puedo", "puede", "pueden", "podria", "podrias", "necesito", "necesitas",
+        "quisiera", "tengo", "hay", "como", "cuando", "cuanto", "cuanta",
+        "cuantos", "cuantas", "cual", "cuales", "que", "quien", "quienes",
+        "sirve", "seria", "estoy", "voy", "van", "ver", "saber", "algun",
+        "alguna", "alguno", "este", "esta", "esto", "aca", "aqui", "alla",
+        "campus", "facultad", "beauchef", "fcfm", "uchile",
+    }
+)
+
+
+def tokens_texto(texto: str) -> list[str]:
+    """Tokens para la recuperación sobre la base: sin palabras de pregunta."""
+    return [t for t in _tokens(texto) if len(t) > 2 and t not in VACIAS_TEXTO]
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,7 +158,7 @@ class BaseConocimiento:
         self._df: Counter = Counter()
 
         for f in fragmentos:
-            t = tokens(f"{f.titulo} {f.texto}")
+            t = tokens_texto(f"{f.titulo} {f.texto}")
             contador = Counter(t)
             self._tokens.append(contador)
             self._largos.append(max(len(t), 1))
@@ -179,7 +199,7 @@ class BaseConocimiento:
         return math.log(1 + (self._n - df + 0.5) / (df + 0.5))
 
     def buscar(self, consulta: str, k: int = 6) -> list[FragmentoPuntuado]:
-        consulta_tokens = [t for t in tokens(consulta) if len(t) > 2]
+        consulta_tokens = tokens_texto(consulta)
         if not consulta_tokens or not self.fragmentos:
             return []
 

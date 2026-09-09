@@ -1,7 +1,52 @@
 """Selección y configuración de proveedores."""
 
-from ubicate.chat.proveedores import ProveedorEco, crear_proveedor
+import types
+
+import pytest
+
+from ubicate.chat.proveedores import (
+    ErrorProveedor,
+    Mensaje,
+    ProveedorEco,
+    ProveedorOpenAI,
+    crear_proveedor,
+)
 from ubicate.config import Settings
+
+
+def _respuesta_falsa(contenido, finish_reason):
+    eleccion = types.SimpleNamespace(
+        message=types.SimpleNamespace(content=contenido),
+        finish_reason=finish_reason,
+    )
+    return types.SimpleNamespace(choices=[eleccion])
+
+
+def _proveedor_openai(monkeypatch, contenido, finish_reason):
+    prov = ProveedorOpenAI(Settings(proveedor_llm="gemini", api_key="x"))
+    monkeypatch.setattr(
+        prov._cliente.chat.completions,
+        "create",
+        lambda **_: _respuesta_falsa(contenido, finish_reason),
+    )
+    return prov
+
+
+def test_respuesta_normal_se_devuelve(monkeypatch):
+    prov = _proveedor_openai(monkeypatch, "  Hola.  ", "stop")
+    assert prov.responder("s", [Mensaje("user", "hola")]) == "Hola."
+
+
+def test_recitation_de_gemini_es_error(monkeypatch):
+    prov = _proveedor_openai(monkeypatch, "Biblioteca de 850 y la", "recitation")
+    with pytest.raises(ErrorProveedor):
+        prov.responder("s", [Mensaje("user", "dónde estudio")])
+
+
+def test_respuesta_vacia_es_error(monkeypatch):
+    prov = _proveedor_openai(monkeypatch, "", "stop")
+    with pytest.raises(ErrorProveedor):
+        prov.responder("s", [Mensaje("user", "hola")])
 
 
 def test_sin_api_key_cae_a_eco():

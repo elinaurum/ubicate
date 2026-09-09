@@ -15,6 +15,31 @@ desplegar.
 
 ---
 
+## [1.4.2] — 2026-09-08
+
+Mejora de la calidad de las respuestas del chat.
+Nota completa: [ACT-007](docs/actualizaciones/ACT-007-calidad-de-respuestas.md).
+
+### Corregido
+
+* **Fuentes irrelevantes.** La recuperación ignoraba mal las palabras de
+  pregunta ("puedo", "dónde", "cómo", "hay"…), así que "dónde puedo estudiar"
+  traía el fragmento "Dónde puedo conseguir paletas de ping pong". Nueva lista
+  `VACIAS_TEXTO` en `chat/conocimiento.py`.
+* **Respuestas cortadas.** `ProveedorOpenAI` devolvía el texto a medias cuando
+  Gemini interrumpía la generación (filtro de "recitación"). Ahora revisa
+  `finish_reason` y degrada con un mensaje claro en vez de una frase truncada.
+
+### Cambiado
+
+* El prompt pide reformular con palabras propias y no copiar el contexto tal
+  cual (`VERSION_PROMPT` 1.1.0 → 1.2.0). Mejora el estilo y evita el corte por
+  recitación de Gemini.
+* `docs/DATOS.md` §5: guía para redactar títulos de fragmento que la búsqueda
+  aproveche.
+
+---
+
 ## [1.4.1] — 2026-09-08
 
 Preparación para publicar el prototipo en Streamlit Community Cloud.

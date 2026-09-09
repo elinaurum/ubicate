@@ -144,6 +144,13 @@ recuperable de forma independiente. En la práctica, escribe un párrafo por tem
 y empiézalo con el título en negrita. Los párrafos de menos de 60 caracteres se
 unen al siguiente.
 
+**Títulos de fragmento:** el título es lo que más pesa en la búsqueda. Que
+contenga las palabras del *tema* ("Espacios para estudiar", "Franquicia
+dental"), no las de la *pregunta*. La recuperación ignora "dónde", "puedo",
+"cómo", "hay", "cuál" y similares (lista en `chat/conocimiento.py`,
+`VACIAS_TEXTO`): un título como "¿Dónde puedo estudiar?" se busca solo por
+"estudiar".
+
 ## 6. Agregar contenido: procedimiento
 
 ### Una sala nueva
