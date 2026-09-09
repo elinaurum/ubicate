@@ -117,3 +117,64 @@ Si una clave se filtra: rotarla primero, investigar después.
 Cada versión es una imagen etiquetada. La vuelta atrás es desplegar la etiqueta
 anterior. Si el cambio tocó el esquema de `data/`, revisar en la nota de
 actualización si requiere migración inversa antes de volver.
+
+## 8. Prototipo en Streamlit Community Cloud
+
+Esto **no** es el despliegue para la facultad (secciones 1–7). Es la forma
+gratis de tener el prototipo en línea para mostrarlo y recibir comentarios,
+mientras se decide la infraestructura definitiva.
+
+### Qué hace falta
+
+- El repositorio en GitHub (ya está: `github.com/elinaurum/ubicate`). Se sube y
+  actualiza con GitHub Desktop; no hace falta instalar `git` aparte.
+- Una cuenta en <https://share.streamlit.io> (se entra con la de GitHub).
+- La API key del proveedor (hoy Gemini, de Google AI Studio).
+
+### Pasos
+
+1. En <https://share.streamlit.io> → **Create app** → **Deploy a public app from
+   GitHub**.
+2. Repositorio `elinaurum/ubicate`, rama `main`, **Main file path** `app.py`.
+3. **Advanced settings** → Python `3.12`.
+4. **Advanced settings → Secrets**, en formato TOML (esto reemplaza al `.env`,
+   que no se sube):
+
+   ```toml
+   UBICATE_PROVEEDOR_LLM = "gemini"
+   UBICATE_MODELO_LLM = "gemini-3.6-flash"
+   UBICATE_API_KEY = "PEGAR_LA_KEY_DE_GEMINI"
+   UBICATE_ENTORNO = "produccion"
+   UBICATE_LOG_FORMATO = "json"
+   UBICATE_MENSAJES_POR_SESION = "20"
+   ```
+
+   Streamlit Cloud expone estos valores como variables de entorno y `config.py`
+   los toma solo (prefijo `UBICATE_`). No hay que tocar código.
+5. **Deploy**. La primera construcción tarda un par de minutos.
+
+### Después
+
+- **Actualizar** = hacer *commit* y *push* a `main` con GitHub Desktop. Streamlit
+  Cloud redespliega solo.
+- La app **se duerme** tras un rato sin visitas; la siguiente carga tarda ~30 s.
+- El sistema de archivos es **efímero**: `var/logs/consultas.jsonl` (el registro
+  de consultas) se pierde en cada reinicio. Para el prototipo da lo mismo; para
+  medir uso de verdad hace falta el despliegue de las secciones 1–7 con volumen
+  persistente.
+- La capa gratuita de Gemini tiene límite por minuto y por día. Si entran muchas
+  personas a la vez, algunas verán "intenta de nuevo en unos segundos" (hay
+  reintento con espera y, de fondo, el modo eco): es degradación, no caída.
+  Bajar `UBICATE_MENSAJES_POR_SESION` reparte mejor el cupo.
+- Para restringir quién puede entrar: Streamlit Cloud → Settings → Sharing →
+  lista de correos autorizados.
+
+### Lista de verificación
+
+- [ ] `.env` **no** aparece en los cambios de GitHub Desktop (lleva la key)
+- [ ] `requirements.txt` incluye `openai` (lo necesita el cliente de Gemini)
+- [ ] Secrets cargados en Streamlit Cloud, no en el repositorio
+- [ ] `UBICATE_ENTORNO = "produccion"` (si no, la interfaz muestra detalles
+      técnicos de error al usuario)
+- [ ] Prueba de humo: buscar `B04`, preguntar "dónde almuerzo", tocar el botón
+      "📍" y ver el marcador

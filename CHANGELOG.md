@@ -15,6 +15,23 @@ desplegar.
 
 ---
 
+## [1.4.1] — 2026-09-08
+
+Preparación para publicar el prototipo en Streamlit Community Cloud.
+Nota completa: [ACT-006](docs/actualizaciones/ACT-006-despliegue-en-streamlit-cloud.md).
+
+### Cambiado
+
+* `requirements.txt` incluye `openai` (lo usa el cliente de Gemini/Groq). Antes
+  estaba comentado y, sin instalarlo, la aplicación caía a modo eco en silencio.
+
+### Agregado
+
+* `docs/DESPLIEGUE.md` §8: cómo desplegar el prototipo en Streamlit Community
+  Cloud, con la configuración de secretos y sus limitaciones.
+
+---
+
 ## [1.4.0] — 2026-09-08
 
 El chat deja de saltar solo al mapa: ofrece cada lugar como un botón y el

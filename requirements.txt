@@ -5,6 +5,9 @@ folium>=0.16
 pydantic>=2.6
 pydantic-settings>=2.2
 
-# Proveedor de modelo: instalar solo el que se vaya a usar.
+# Proveedor de modelo.
+# openai: cliente para OpenAI y para los endpoints compatibles — Gemini y Groq
+# (ver ADR-0005). Es el que usa el despliegue actual.
+openai>=1.30
+# anthropic: solo si se cambia UBICATE_PROVEEDOR_LLM a "anthropic".
 # anthropic>=0.40
-# openai>=1.30
