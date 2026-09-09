@@ -50,7 +50,8 @@ el prototipo, donde la lógica y la interfaz estaban entrelazadas en un archivo.
    └─► motor._extraer_lugar()   detecta [[LUGAR:B04]], lo borra del texto
           │
           ├─► panel de chat     muestra la respuesta y sus fuentes
-          └─► estado de sesión  fija el destino → el mapa dibuja el marcador
+          └─► estado de sesión  fija el destino y cambia la vista a "mapa" →
+                                el plano se abre con el marcador puesto
 ```
 
 La marca `[[LUGAR:ID]]` es el contrato entre el modelo y la aplicación: obliga al
@@ -109,7 +110,7 @@ original dejó planificado:
   rama antes de armar el contexto. El campo `acceso` y el catálogo de lugares
   mapeables ya permiten enlazar sala → marcador automáticamente.
 * **Geolocalización.** `repositorio.ruta(destino, origen_id)` ya acepta un origen
-  arbitrario; hoy lo alimenta el selector de la barra lateral y mañana lo puede
+  arbitrario; hoy lo alimenta el selector del panel del mapa y mañana lo puede
   alimentar el GPS o el posicionamiento por WiFi.
 * **Ruteo interior.** `Ruta` guarda una tupla de puntos, no dos: un camino con
   vértices intermedios no cambia el modelo ni el renderizador.

@@ -31,8 +31,8 @@ Nota completa: [ACT-004](docs/actualizaciones/ACT-004-interfaz-para-telefono.md)
 * El selector "¿Dónde estás ahora?" pasa de la barra lateral al panel del mapa,
   junto al buscador.
 * Piso de `streamlit` sube de 1.36 a 1.50 (`st.segmented_control`).
-* [ADR-0006](docs/decisiones/ADR-0006-navegacion-una-vista-a-la-vez.md): la
-  navegación de una vista a la vez supera el layout de dos paneles del ADR-0001.
+* [ADR-0006](docs/decisiones/ADR-0006-navegacion-una-vista-a-la-vez.md): por qué
+  una vista a la vez y por qué no pestañas.
 
 ---
 

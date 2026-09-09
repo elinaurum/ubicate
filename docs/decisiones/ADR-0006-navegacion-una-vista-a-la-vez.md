@@ -2,8 +2,11 @@
 
 - **Estado:** aceptada
 - **Fecha:** 2026-09-08
-- **Supera:** el layout de dos paneles lado a lado descrito en ADR-0001 y en
-  `docs/ARQUITECTURA.md` (no la regla de capas, que sigue vigente).
+- **Reemplaza a:** — (el layout de dos paneles nunca tuvo ADR propio; se
+  describía solo en `docs/ARQUITECTURA.md`, que se actualiza con este cambio)
+
+La regla de capas del ADR-0001 sigue intacta: este cambio ocurre entero dentro
+de `src/ubicate/ui/`.
 
 ## Contexto
 

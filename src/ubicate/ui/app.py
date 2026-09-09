@@ -11,11 +11,6 @@ from ubicate.datos.repositorio import ErrorDatos
 from ubicate.ui import estado, recursos
 from ubicate.ui.componentes import barra_lateral, panel_chat, panel_mapa
 
-# Clave del widget de navegación. Es distinta de estado.Claves.VISTA a propósito:
-# la fuente de verdad es el estado (la puede cambiar el chat al encontrar un
-# lugar); este widget solo la refleja y se sincroniza en cada recarga.
-_CLAVE_WIDGET_VISTA = "ub_vista_widget"
-
 _ETIQUETA_VISTA = {estado.VISTA_CHAT: "💬 Preguntar", estado.VISTA_MAPA: "🗺️ Mapa"}
 
 
@@ -49,20 +44,25 @@ def main() -> None:
         "Respondo solo con información verificada de la FCFM."
     )
 
-    # Navegación entre las dos vistas. Se copia el estado al widget ANTES de
-    # crearlo (única forma admitida de fijar su valor); así, cuando el chat
-    # cambia la vista a "mapa", el selector aparece ya en esa posición.
-    st.session_state[_CLAVE_WIDGET_VISTA] = estado.vista()
+    # Navegación entre las dos vistas. La fuente de verdad es el estado de
+    # sesión, no el widget: el chat puede cambiar la vista a "mapa" al encontrar
+    # un lugar. Para que el selector siga a ese cambio sin pelear con Streamlit,
+    # su `key` incluye la vista actual: cuando el estado cambia, el widget se
+    # reconstruye y toma `default`. Cuando es el usuario quien pulsa, la
+    # elección difiere del estado y lo actualizamos.
+    vista_actual = estado.vista()
     eleccion = st.segmented_control(
         "Vista",
         options=[estado.VISTA_CHAT, estado.VISTA_MAPA],
         format_func=_ETIQUETA_VISTA.get,
-        key=_CLAVE_WIDGET_VISTA,
+        default=vista_actual,
+        key=f"ub_vista_widget_{vista_actual}",
         label_visibility="collapsed",
         width="stretch",
     )
-    vista_actual = eleccion or estado.vista()
-    estado.fijar_vista(vista_actual)
+    if eleccion and eleccion != vista_actual:
+        estado.fijar_vista(eleccion)
+        st.rerun()
 
     if vista_actual == estado.VISTA_MAPA:
         panel_mapa.render()

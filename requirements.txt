@@ -1,6 +1,6 @@
 # Dependencias de ejecución. Fijar versiones exactas antes de desplegar
 # a producción (ver docs/DESPLIEGUE.md §2).
-streamlit>=1.36
+streamlit>=1.50
 folium>=0.16
 pydantic>=2.6
 pydantic-settings>=2.2
