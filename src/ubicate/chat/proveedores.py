@@ -56,6 +56,10 @@ def con_reintento(llamada, intentos: int = 3, espera_base: float = 1.5):
 class Mensaje:
     rol: str  # "user" | "assistant"
     texto: str
+    # Metadatos de la respuesta del asistente, para volver a dibujarlos al
+    # recargar el historial. Los proveedores solo leen ``rol`` y ``texto``.
+    citas: tuple[str, ...] = ()
+    lugares: tuple[str, ...] = ()  # ids del catálogo mapeable mencionados
 
 
 @runtime_checkable

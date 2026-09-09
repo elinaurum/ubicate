@@ -4,9 +4,10 @@
 
 U-bícate es una aplicación web de una sola página, pensada para el teléfono. Un
 selector arriba alterna entre dos vistas a pantalla completa: **Preguntar** (el
-chat) y **Mapa** (buscador y plano). Cuando el asistente identifica un lugar, la
-aplicación cambia sola a la vista del mapa (ver ADR-0006). Detrás hay cuatro
-capas con dependencias en una sola dirección.
+chat) y **Mapa** (buscador y plano) — ver ADR-0006. Cuando el asistente
+identifica lugares, los ofrece como botones bajo la respuesta; al pulsar uno se
+abre el mapa en ese lugar (ADR-0007). Detrás hay cuatro capas con dependencias
+en una sola dirección.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -47,11 +48,12 @@ el prototipo, donde la lógica y la interfaz estaban entrelazadas en un archivo.
    │
    ├─► proveedor.responder()    anthropic / openai / eco
    │
-   └─► motor._extraer_lugar()   detecta [[LUGAR:B04]], lo borra del texto
+   └─► motor._extraer_lugares()  detecta las líneas [[LUGAR:B04]], las borra
+          │                      del texto y valida cada id contra el plano
           │
-          ├─► panel de chat     muestra la respuesta y sus fuentes
-          └─► estado de sesión  fija el destino y cambia la vista a "mapa" →
-                                el plano se abre con el marcador puesto
+          ├─► panel de chat      muestra la respuesta, sus fuentes y un botón
+          │                      "📍" por cada lugar
+          └─► al pulsar un botón  fija ese destino y cambia a la vista "mapa"
 ```
 
 La marca `[[LUGAR:ID]]` es el contrato entre el modelo y la aplicación: obliga al

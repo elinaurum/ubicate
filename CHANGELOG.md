@@ -15,6 +15,33 @@ desplegar.
 
 ---
 
+## [1.4.0] — 2026-09-08
+
+El chat deja de saltar solo al mapa: ofrece cada lugar como un botón y el
+estudiante elige cuál abrir. Una consulta puede sugerir varios lugares.
+Nota completa: [ACT-005](docs/actualizaciones/ACT-005-botones-de-lugar-en-el-chat.md).
+
+### Cambiado
+
+* Cuando el asistente identifica lugares, aparece **un botón "📍" por lugar**
+  bajo la respuesta. El mapa se abre —y la vista cambia— solo al pulsarlo.
+  Antes se fijaba un único lugar y se saltaba al mapa automáticamente.
+* El asistente puede marcar **varios lugares** en una respuesta, no uno solo
+  (`VERSION_PROMPT` 1.0.0 → 1.1.0).
+* Las citas ("de dónde saqué esto") quedan guardadas por mensaje y se
+  redibujan al recargar el historial, no solo en la última respuesta en vivo.
+* [ADR-0007](docs/decisiones/ADR-0007-varios-lugares-con-botones.md) supera a
+  ADR-0002 y revierte el salto automático de ACT-004.
+
+### Interno
+
+* `Respuesta.destino` → `Respuesta.destinos` (tupla); `destino` queda como
+  propiedad (el primero) para las métricas.
+* `Mensaje` gana `citas` y `lugares`; `Conversacion.agregar` los acepta como
+  parámetros opcionales. `Destino.etiqueta_corta` para el texto de los botones.
+
+---
+
 ## [1.3.0] — 2026-09-08
 
 Interfaz reorganizada para uso en el teléfono, que es el contexto real: se

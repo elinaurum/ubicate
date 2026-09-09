@@ -3,11 +3,11 @@
 Flujo por consulta:
 
     consulta → recuperación BM25 → prompt (sistema + historial) → proveedor
-             → extracción de la marca [[LUGAR:ID]] → destino para el mapa
+             → extracción de las marcas [[LUGAR:ID]] → lugares para el mapa
 
-La extracción de la marca es lo que cierra el Objetivo 3 de la documentación
-original: la respuesta del chatbot enciende el marcador en el mapa sin que el
-usuario tenga que copiar el nombre al buscador.
+Cada lugar reconocido se ofrece como un botón bajo la respuesta del chat; el
+usuario decide cuál abrir en el mapa (ver ADR-0007). Una respuesta puede
+mencionar varios lugares y todos llegan como botones.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from ubicate.modelos import Destino
 log = logging.getLogger(__name__)
 
 RE_LUGAR = re.compile(r"\[\[\s*LUGAR\s*:\s*([A-Z0-9_]+)\s*\]\]", re.IGNORECASE)
+MAX_LUGARES = 5
 FRASES_SIN_RESPUESTA = (
     "no tengo", "no encontré", "no encuentro", "no cuento con",
     "no aparece", "no dispongo", "no está en mi base",
@@ -36,12 +37,17 @@ FRASES_SIN_RESPUESTA = (
 @dataclass(frozen=True, slots=True)
 class Respuesta:
     texto: str
-    destino: Destino | None = None
+    destinos: tuple[Destino, ...] = ()
     fragmentos: tuple[FragmentoPuntuado, ...] = ()
     sin_respuesta: bool = False
     proveedor: str = "eco"
     ms: int = 0
     error: str | None = None
+
+    @property
+    def destino(self) -> Destino | None:
+        """El lugar principal (el más relevante). Lo usan las métricas."""
+        return self.destinos[0] if self.destinos else None
 
     @property
     def citas(self) -> list[str]:
@@ -58,8 +64,17 @@ class Conversacion:
 
     mensajes: list[Mensaje] = field(default_factory=list)
 
-    def agregar(self, rol: str, texto: str) -> None:
-        self.mensajes.append(Mensaje(rol=rol, texto=texto))
+    def agregar(
+        self,
+        rol: str,
+        texto: str,
+        *,
+        citas: tuple[str, ...] = (),
+        lugares: tuple[str, ...] = (),
+    ) -> None:
+        self.mensajes.append(
+            Mensaje(rol=rol, texto=texto, citas=tuple(citas), lugares=tuple(lugares))
+        )
 
     def recientes(self, max_turnos: int) -> list[Mensaje]:
         return self.mensajes[-(max_turnos * 2) :]
@@ -123,12 +138,12 @@ class MotorChat:
                 "segundos, o busca el lugar directamente en el mapa."
             )
 
-        texto, destino = self._extraer_lugar(bruto, resultado_espacial.destino)
+        texto, destinos = self._extraer_lugares(bruto, resultado_espacial.destino)
         ms = int((time.perf_counter() - inicio) * 1000)
 
         return Respuesta(
             texto=texto.strip(),
-            destino=destino,
+            destinos=destinos,
             fragmentos=tuple(recuperados),
             sin_respuesta=self._parece_sin_respuesta(texto, recuperados),
             proveedor=self.proveedor,
@@ -136,16 +151,23 @@ class MotorChat:
             error=error,
         )
 
-    def _extraer_lugar(
+    def _extraer_lugares(
         self, bruto: str, respaldo: Destino | None
-    ) -> tuple[str, Destino | None]:
-        destino = respaldo
+    ) -> tuple[str, tuple[Destino, ...]]:
+        """Devuelve el texto sin marcas y los lugares válidos, sin repetir.
+
+        Orden: primero los que marcó el modelo (su orden de relevancia), luego
+        la coincidencia directa del buscador si no venía ya en la lista.
+        """
+        vistos: dict[str, Destino] = {}
         for coincidencia in RE_LUGAR.finditer(bruto):
             candidato = self._repo.destino(coincidencia.group(1).upper())
             if candidato is not None:
-                destino = candidato
-                break
-        return RE_LUGAR.sub("", bruto), destino
+                vistos.setdefault(candidato.id, candidato)
+        if respaldo is not None:
+            vistos.setdefault(respaldo.id, respaldo)
+        destinos = tuple(vistos.values())[:MAX_LUGARES]
+        return RE_LUGAR.sub("", bruto), destinos
 
     @staticmethod
     def _parece_sin_respuesta(texto: str, recuperados: list[FragmentoPuntuado]) -> bool:

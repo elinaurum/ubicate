@@ -23,13 +23,26 @@ def _motor(settings, repo, kb, proveedor):
 def test_extrae_marca_de_lugar_y_la_borra_del_texto(settings, repo, kb):
     proveedor = ProveedorFalso("La sala B04 está en el piso -1.\n[[LUGAR:B04]]")
     respuesta = _motor(settings, repo, kb, proveedor).responder("dónde queda B04", Conversacion())
+    assert [d.id for d in respuesta.destinos] == ["B04"]
     assert respuesta.destino.id == "B04"
+    assert "[[LUGAR" not in respuesta.texto
+
+
+def test_extrae_varias_marcas_en_orden_y_sin_repetir(settings, repo, kb):
+    proveedor = ProveedorFalso(
+        "Puede ser en la B04 o en la B03.\n[[LUGAR:B04]]\n[[LUGAR:B03]]\n[[LUGAR:B04]]"
+    )
+    respuesta = _motor(settings, repo, kb, proveedor).responder(
+        "dónde rindo la evaluación", Conversacion()
+    )
+    assert [d.id for d in respuesta.destinos] == ["B04", "B03"]
     assert "[[LUGAR" not in respuesta.texto
 
 
 def test_marca_invalida_no_rompe(settings, repo, kb):
     proveedor = ProveedorFalso("Texto cualquiera.\n[[LUGAR:NO_EXISTE]]")
     respuesta = _motor(settings, repo, kb, proveedor).responder("hola", Conversacion())
+    assert respuesta.destinos == ()
     assert respuesta.destino is None
     assert "[[LUGAR" not in respuesta.texto
 

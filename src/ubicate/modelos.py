@@ -157,6 +157,13 @@ class Destino:
             return f"Sala {self.id} — {self.edificio.nombre} (piso {self.piso})"
         return self.edificio.nombre
 
+    @property
+    def etiqueta_corta(self) -> str:
+        """Nombre breve para un botón o una lista."""
+        if self.categoria is Categoria.SALA:
+            return f"Sala {self.id}"
+        return self.nombre
+
 
 @dataclass(frozen=True, slots=True)
 class Ruta:

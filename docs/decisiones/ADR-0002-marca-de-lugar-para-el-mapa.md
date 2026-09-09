@@ -1,7 +1,11 @@
 # ADR-0002 · Contrato `[[LUGAR:ID]]` entre el modelo y la aplicación
 
-- **Estado:** aceptada
+- **Estado:** superada por [ADR-0007](ADR-0007-varios-lugares-con-botones.md)
 - **Fecha:** 2026-09-08
+
+> El contrato `[[LUGAR:ID]]` sigue vigente. Lo que cambió en ADR-0007: el modelo
+> escribe una marca por cada lugar (no una sola) y la aplicación las ofrece como
+> botones en el chat en vez de fijar el destino y saltar al mapa.
 
 ## Contexto
 

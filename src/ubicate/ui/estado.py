@@ -78,11 +78,6 @@ def fijar_vista(valor: str) -> None:
 def fijar_destino(valor: str | None) -> None:
     st.session_state[Claves.DESTINO] = valor
     st.session_state[Claves.CANDIDATOS] = []
-    # Un destino recién fijado solo se ve en el mapa. Llevar la vista ahí para
-    # que el marcador aparezca frente al usuario: es el puente chat → mapa
-    # (Objetivo 3), que en una pantalla de teléfono antes quedaba fuera de foco.
-    if valor is not None:
-        st.session_state[Claves.VISTA] = VISTA_MAPA
 
 
 def fijar_origen(valor: str | None) -> None:

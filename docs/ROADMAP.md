@@ -56,6 +56,13 @@ resultante con el marcador.
 como horario académico publicado, nunca como ubicación en tiempo real. Ver
 `PRIVACIDAD.md`.
 
+**Paso previo, ya desacoplable:** el directorio de personas y unidades
+(`02_cuerpo_funcionario.md`) no necesita U-Campus ni autorización — el dato ya es
+público y está recopilado. Pasarlo a datos estructurados (`data/directorio.json`
++ modelo + índice, con rama de consulta en el motor) resuelve ya las preguntas de
+contacto y deja el molde del enrutamiento híbrido. Diseño y plan por partes en
+[ADR-0008](decisiones/ADR-0008-directorio-como-datos-estructurados.md).
+
 ### 2. Ampliar el índice espacial
 
 Deuda D-03, limitación M4. Esfuerzo bajo, beneficio inmediato: la base ya
