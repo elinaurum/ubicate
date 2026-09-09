@@ -80,11 +80,19 @@ class Settings(BaseSettings):
 
     # --- Chat -------------------------------------------------------------
     proveedor_llm: ProveedorLLM = ProveedorLLM.ECO
-    modelo_llm: str = ""  # cada proveedor tiene sus nombres; ver .env.example
+    modelo_llm: str = ""
     api_key: str | None = None
     # Solo se necesita para proveedor "compatible"; gemini y groq lo traen fijo.
     base_url: str | None = None
-    max_tokens: int = 700
+    # Ojo: en Gemini este tope es COMBINADO (pensamiento + respuesta visible).
+    # Con 700 la respuesta se cortaba a media frase; ver ACT-008.
+    max_tokens: int = 2048
+    # Cuánto puede razonar el modelo antes de contestar. Buscar una sala no lo
+    # necesita, y ese razonamiento gasta el presupuesto de arriba.
+    # "" o "auto" = valor por defecto del proveedor. Solo se aplica a Gemini.
+    nivel_pensamiento: str = Field(
+        default="minimal", pattern=r"^(|auto|minimal|low|medium|high|-?\d+)$"
+    )
     temperatura: float = Field(default=0.2, ge=0.0, le=1.0)
     historial_max_turnos: int = Field(default=8, ge=1, le=40)
     kb_fragmentos: int = Field(default=6, ge=1, le=20)

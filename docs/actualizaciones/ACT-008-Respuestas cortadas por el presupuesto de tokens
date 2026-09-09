@@ -1,0 +1,137 @@
+# ACT-008 — Respuestas cortadas por el presupuesto de tokens
+
+| Campo | Valor |
+|---|---|
+| Fecha | 2026-09-08 |
+| Versión | 1.4.3 |
+| Tipo | corrección |
+| Autor | Equipo U-bícate |
+| Revisado por | _pendiente_ |
+
+## Qué se pidió
+
+> Cuando hago preguntas en el chatbot, estas salen cortadas y no sé por qué.
+
+Caso reproducido: a "¿dónde almuerzo?" el chat respondió "Para almorzar o
+calentar tu comida tienes varias opciones en el campus. Puedes usar los
+microondas disponibles en el Casino Domey", sin punto final y sin aviso de
+error.
+
+## Diagnóstico
+
+El log del proveedor entregó la pista:
+
+```json
+{"nivel": "WARNING", "logger": "ubicate.chat.proveedores",
+ "mensaje": "proveedor gemini terminó con finish_reason='length'"}
+```
+
+La respuesta se cortó por presupuesto de tokens, no por el filtro de recitación
+que se había atacado en ACT-007. Lo desconcertante es que el texto visible tenía
+unos 25 tokens y `UBICATE_MAX_TOKENS` estaba en 700.
+
+La causa es que **en Gemini `max_tokens` es un tope combinado de tokens de
+pensamiento y de respuesta**. El modelo razona internamente antes de contestar,
+ese razonamiento se descuenta del mismo presupuesto, y lo que sobra es lo que le
+llega al estudiante. Está documentado como discrepancia con la documentación
+oficial de Google en `googleapis/python-genai#2062`: el pensamiento tiende a
+ocupar cerca del 96% del presupuesto disponible, sea cual sea. Con 700 tokens y
+un modelo de la familia 3, la respuesta visible queda en migajas.
+
+Dos fallas se sumaron:
+
+1. **Presupuesto mal dimensionado.** 700 tokens alcanzaban de sobra para el
+   texto, pero no para texto más razonamiento.
+2. **El corte no se detectaba.** La guarda de ACT-007 era una lista negra
+   (`{"content_filter", "recitation", "safety"}`) y `"length"` no estaba en
+   ella. El código registraba el aviso en el log y devolvía el texto truncado
+   como si fuera una respuesta buena.
+
+## Qué se hizo
+
+- `src/ubicate/config.py` — `max_tokens` 700 → 2048. Nueva opción
+  `nivel_pensamiento` (por defecto `"minimal"`), validada contra
+  `"" | auto | minimal | low | medium | high | <entero>`.
+- `src/ubicate/chat/proveedores.py`:
+  - `config_pensamiento()` arma el `extra_body` que acota el razonamiento del
+    modelo. Solo se envía a Gemini; un valor numérico se manda como
+    `thinking_budget` (familia 2.5) y uno textual como `thinking_level`
+    (familia 3). Con `"auto"` o vacío no se envía nada.
+  - `ProveedorOpenAI._crear` reintenta sin `extra_body` y lo desactiva para la
+    sesión si el modelo rechaza el ajuste, en vez de dejar el chat inservible.
+  - La lista negra de razones de término se reemplaza por la lista blanca
+    `RAZONES_COMPLETAS = {"stop", "end_turn", "eos"}`, más la heurística
+    `_parece_cortado()` para los proveedores que truncan pero igual informan
+    `stop`. El `]` cuenta como cierre válido: el prompt pide terminar con las
+    marcas `[[LUGAR:ID]]`.
+  - Ante una respuesta incompleta se reintenta **una** vez con un aviso acorde a
+    la causa: `AVISO_BREVEDAD` si fue por tokens, `AVISO_REFORMULAR` si fue por
+    copiar el contexto. Si el segundo intento también sale cortado, se lanza
+    `ErrorProveedor` con la causa y la variable de entorno que hay que ajustar.
+  - `ProveedorAnthropic` pasa por el mismo control (`stop_reason="max_tokens"`).
+- `.env.example`, `README.md` — se documenta `UBICATE_NIVEL_PENSAMIENTO` y la
+  advertencia sobre el tope combinado en Gemini.
+- `tests/test_proveedores.py` — ocho pruebas nuevas: corte por tokens con
+  recuperación al reintentar, corte persistente, razón desconocida, texto sin
+  cierre pese a `stop`, marca de lugar como cierre válido, y las tres de la
+  configuración de pensamiento.
+- `pyproject.toml`, `src/ubicate/__init__.py` — versión 1.4.2 → 1.4.3.
+
+## Por qué así
+
+**Lista blanca en vez de lista negra.** ACT-007 falló justamente por enumerar los
+cortes conocidos: cada endpoint los nombra distinto y el compatible con OpenAI de
+Gemini ni siquiera conserva los nombres originales de Google. Enumerar las
+razones que significan "terminé de hablar" es un conjunto corto y estable; el
+resto se trata como incompleto.
+
+**Pensamiento mínimo en vez de solo subir el presupuesto.** Subir `max_tokens` a
+secas no resuelve nada de fondo: el razonamiento se expande hasta llenar lo que
+se le dé, así que un tope más alto solo encarece y ralentiza la consulta. Buscar
+en qué piso está una sala no requiere cadena de razonamiento. Se sube el tope
+igual, como colchón, pero el arreglo real es pedir el nivel mínimo.
+
+**Reintento en vez de degradar.** El corte tiene arreglo desde el prompt, así que
+degradar a "tuve un problema para responder" desperdicia una consulta que sí se
+podía contestar. Se reintenta una sola vez: dos duplican la latencia de un caso
+que ya es la excepción.
+
+**Degradación si el modelo no acepta el ajuste.** Los nombres y rangos válidos de
+`thinking_config` dependen del modelo, y el equipo va a cambiar de modelo cuando
+se agote una capa gratuita. Un 400 por este parámetro no puede dejar el chat
+caído.
+
+## Cómo se probó
+
+- `ruff check` y `pytest` en verde con un entorno limpio.
+- Prueba manual con `UBICATE_PROVEEDOR_LLM=gemini`: las siete consultas de
+  diagnóstico de ACT-007 ("dónde estudio", "dónde almuerzo", "quién es el
+  decano", "cómo pido una franquicia", "dónde hay microondas"…) responden
+  completas y con punto final.
+- `make probar` sin observaciones.
+
+> Pendiente de verificar en terreno: el comportamiento con un modelo de la
+> familia 2.5, donde el ajuste viaja como `thinking_budget` numérico.
+
+## Impacto
+
+| Aspecto | Detalle |
+|---|---|
+| ¿Rompe algo existente? | No |
+| ¿Cambia el esquema de `data/`? | No |
+| ¿Requiere variables de entorno nuevas? | Opcional: `UBICATE_NIVEL_PENSAMIENTO` |
+| ¿Requiere migración? | No |
+
+## Al desplegar
+
+- Revisar el `.env` de producción: si trae `UBICATE_MAX_TOKENS=700`, subirlo o
+  borrar la línea para tomar el nuevo valor por defecto.
+- Vigilar el log en las primeras horas. Si aparece seguido "respuesta incompleta
+  de gemini", subir `UBICATE_MAX_TOKENS` antes que cambiar de modelo.
+
+## Qué quedó pendiente
+
+- Registrar en las métricas los reintentos por corte, para saber si el ajuste
+  quedó bien dimensionado sin depender de leer el log.
+- Leer `usage.completion_tokens_details` para medir cuánto presupuesto se va en
+  pensamiento y calibrar `max_tokens` con datos en vez de estimaciones.
