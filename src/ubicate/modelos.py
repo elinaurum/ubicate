@@ -182,6 +182,10 @@ class PlantaInterior(BaseModel):
     piso: int
     ancho_m: float = Field(gt=0)
     alto_m: float = Field(gt=0)
+    # Archivo GeoJSON en assets/plantas/ con los recintos del piso (pasillos,
+    # halls, servicios: todo lo que no es una sala del catálogo). Se genera con
+    # scripts/extraer_planta_dxf.py --recintos y no se edita a mano.
+    geometria: str = ""
     puntos: tuple[PuntoInteres, ...] = ()
     fuente: str = ""
     activo: bool = True

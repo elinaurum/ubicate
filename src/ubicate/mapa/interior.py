@@ -1,14 +1,14 @@
 """Vista interior de un piso, separada del mapa exterior (ver ADR-0009).
 
-Se dibuja **como vector**: cada sala es una forma con su color y su etiqueta,
-y cada referencia (baño, ascensor, piscina…) es un símbolo. No se incrusta el
-dibujo del plano de arquitectura como imagen: ese dibujo está lleno de detalle
-de construcción (cotas, ductos, pilotes) que estorba a quien solo quiere
-ubicarse.
+El piso se dibuja **completo y como vector**: cada recinto —sala, pasillo,
+hall, baño, sala de máquinas— es una figura con su borde y su relleno, con la
+forma que tiene en el plano de arquitectura. Todo en gris; lo que es un
+destino se pone verde al pasar el cursor por encima.
 
-Todo está en el sistema de coordenadas propio del piso, en **metros**, tal
-como sale del plano (ver ``scripts/extraer_planta_dxf.py``). No tiene relación
-con el lienzo del mapa exterior.
+Los recintos se reconstruyen a partir de los muros del plano
+(``scripts/extraer_planta_dxf.py --recintos``) y viven en un GeoJSON dentro de
+``assets/plantas/``. Las coordenadas están en **metros**, en el sistema propio
+del piso, sin relación con el lienzo del mapa exterior.
 
 Igual que ``mapa/render.py``, este módulo no importa Streamlit y devuelve HTML
 puro, cacheable (ADR-0004).
@@ -17,121 +17,137 @@ puro, cacheable (ADR-0004).
 from __future__ import annotations
 
 import html
+import json
+from functools import lru_cache
+from pathlib import Path
 
 import folium
 
 from ubicate.config import Settings
 from ubicate.modelos import Destino, PlantaInterior, PuntoInteres, TipoPunto
 
-COLOR_SALA = "#C0392B"
-COLOR_SALA_RELLENO = "#E8B5AE"
-COLOR_SALA_ACTIVA = "#8E1B0F"
-COLOR_PISO = "#EDEFF2"
-COLOR_BORDE_PISO = "#C6CBD4"
-COLOR_TEXTO = "#2C3E50"
+# Todo el piso es gris; el verde queda reservado para "el cursor está aquí".
+GRIS_FONDO = "#F4F5F7"
+GRIS_RECINTO = "#DCDFE4"
+GRIS_BORDE = "#9AA1AC"
+GRIS_DESTINO = "#C9CED6"
+GRIS_BORDE_DESTINO = "#6B7280"
+GRIS_TEXTO = "#374151"
+BLANCO = "#FFFFFF"
+VERDE = "#1E8449"
+VERDE_RELLENO = "#A9DFBF"
 
-# Símbolo y color por tipo de referencia. El símbolo es un carácter: no
-# necesita archivos de iconos ni una fuente externa que cargar.
-SIMBOLOS: dict[TipoPunto, tuple[str, str]] = {
-    TipoPunto.BANO: ("🚻", "#2E86C1"),
-    TipoPunto.PISCINA: ("🏊", "#17A589"),
-    TipoPunto.CAMARIN: ("🚿", "#17A589"),
-    TipoPunto.ASCENSOR: ("🛗", "#7D3C98"),
-    TipoPunto.ESCALERA: ("🪜", "#7D3C98"),
+# Símbolo por tipo de referencia: un carácter, sin archivos ni fuentes externas.
+SIMBOLOS: dict[TipoPunto, str] = {
+    TipoPunto.BANO: "🚻",
+    TipoPunto.PISCINA: "🏊",
+    TipoPunto.CAMARIN: "🚿",
+    TipoPunto.ASCENSOR: "🛗",
+    TipoPunto.ESCALERA: "🪜",
 }
 
 
-def _etiqueta_html(texto: str, color: str, tamano: int = 13) -> folium.DivIcon:
+@lru_cache(maxsize=16)
+def _geometria(ruta: str, mtime: float) -> dict:
+    """Recintos del piso. ``mtime`` invalida la caché al cambiar el archivo."""
+    del mtime
+    return json.loads(Path(ruta).read_text(encoding="utf-8"))
+
+
+def geometria_de(settings: Settings, planta: PlantaInterior) -> dict:
+    """GeoJSON con los recintos del piso; vacío si la planta no tiene."""
+    if not planta.geometria:
+        return {"type": "FeatureCollection", "features": []}
+    archivo = settings.dir_plantas / planta.geometria
+    if not archivo.exists():
+        raise FileNotFoundError(f"no se encuentra la geometría de la planta en {archivo}")
+    return _geometria(str(archivo), archivo.stat().st_mtime)
+
+
+def _estilo_recinto(_feature) -> dict:
+    return {
+        "color": GRIS_BORDE,
+        "weight": 1,
+        "fillColor": GRIS_RECINTO,
+        "fillOpacity": 1,
+    }
+
+
+def _estilo_destino(_feature) -> dict:
+    return {
+        "color": GRIS_BORDE_DESTINO,
+        "weight": 2,
+        "fillColor": GRIS_DESTINO,
+        "fillOpacity": 1,
+    }
+
+
+def _estilo_cursor(_feature) -> dict:
+    """Retroalimentación: el cursor está sobre este destino."""
+    return {
+        "color": VERDE,
+        "weight": 3,
+        "fillColor": VERDE_RELLENO,
+        "fillOpacity": 1,
+    }
+
+
+def _etiqueta(texto: str, color: str = GRIS_TEXTO, tamano: int = 12) -> folium.DivIcon:
     seguro = html.escape(texto)
     return folium.DivIcon(
         html=(
-            f"<div style=\"font-family:system-ui,sans-serif;font-size:{tamano}px;"
-            f"font-weight:600;color:{color};white-space:nowrap;"
-            'text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;'
-            f'transform:translate(-50%,-50%)">{seguro}</div>'
+            f'<div style="font:700 {tamano}px system-ui,sans-serif;color:{color};'
+            "white-space:nowrap;pointer-events:none;transform:translate(-50%,-50%);"
+            'text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff,0 0 3px #fff">'
+            f"{seguro}</div>"
         ),
         icon_size=(0, 0),
     )
 
 
-def _simbolo_html(simbolo: str, color: str) -> folium.DivIcon:
+def _simbolo(caracter: str) -> folium.DivIcon:
     return folium.DivIcon(
         html=(
-            '<div style="transform:translate(-50%,-50%);display:flex;'
-            "align-items:center;justify-content:center;width:26px;height:26px;"
-            f"border-radius:50%;background:{color};border:2px solid #fff;"
-            'box-shadow:0 1px 3px rgba(0,0,0,.35);font-size:14px;line-height:1">'
-            f"{simbolo}</div>"
+            '<div style="font-size:11px;line-height:1;pointer-events:none;'
+            f'transform:translate(-50%,-50%)">{caracter}</div>'
         ),
         icon_size=(0, 0),
     )
 
 
-def _tooltip(texto: str) -> folium.Tooltip:
-    """Tooltip con el texto escapado.
+def _feature_sala(destino: Destino) -> dict:
+    """Feature GeoJSON de una sala. GeoJSON usa [x, y]; el modelo, [y, x].
 
-    folium inserta el tooltip tal cual en el HTML: sin escapar, un rótulo del
-    plano con ``<script>`` se ejecutaría en el navegador. Ver CLAUDE.md §5
-    ("escapa siempre lo que venga de datos").
+    El nombre se escapa aquí: ``GeoJsonTooltip`` termina insertando el valor
+    con ``innerHTML``, así que un rótulo con ``<img onerror=…>`` se ejecutaría
+    (ver ACT-011). Escapado, se muestra igual y no se ejecuta.
     """
-    return folium.Tooltip(html.escape(texto))
-
-
-def _popup(titulo: str, detalle: str = "") -> folium.Popup:
-    cuerpo = f"<strong>{html.escape(titulo)}</strong>"
-    if detalle:
-        cuerpo += f"<br>{html.escape(detalle)}"
-    return folium.Popup(
-        f"<div style='font-family:system-ui,sans-serif;font-size:13px'>{cuerpo}</div>",
-        max_width=260,
-    )
-
-
-def _dibujar_sala(destino: Destino, activa: bool, capa: folium.FeatureGroup) -> None:
     sala = destino.sala
-    color = COLOR_SALA_ACTIVA if activa else COLOR_SALA
-    detalle = f"{destino.edificio.nombre} · piso {destino.piso}"
-
+    propiedades = {"nombre": html.escape(f"Sala {destino.id}"), "id": destino.id}
     if sala.poligono_interior:
-        folium.Polygon(
-            locations=[c.como_lista() for c in sala.poligono_interior],
-            color=color,
-            weight=2 if not activa else 3,
-            fill=True,
-            fill_color=COLOR_SALA_RELLENO,
-            fill_opacity=0.95 if activa else 0.8,
-            tooltip=_tooltip(destino.etiqueta_corta),
-            popup=_popup(f"Sala {destino.id}", detalle),
-        ).add_to(capa)
+        anillo = [[c.x, c.y] for c in sala.poligono_interior]
+        anillo.append(anillo[0])
+        geometria = {"type": "Polygon", "coordinates": [anillo]}
     else:
-        # Sin contorno derivable del plano: se marca el punto, no se inventa
-        # una forma. Ver docs/DEUDA_DATOS.md D-06.
-        folium.CircleMarker(
-            location=sala.coord_interior.como_lista(),
-            radius=13,
-            color=color,
-            weight=2,
-            fill=True,
-            fill_color=COLOR_SALA_RELLENO,
-            fill_opacity=0.9,
-            tooltip=_tooltip(destino.etiqueta_corta),
-            popup=_popup(f"Sala {destino.id}", detalle),
-        ).add_to(capa)
-
-    folium.Marker(
-        location=sala.coord_interior.como_lista(),
-        icon=_etiqueta_html(destino.id, COLOR_SALA_ACTIVA if activa else COLOR_TEXTO),
-    ).add_to(capa)
+        # Sin contorno derivable del plano: punto, no una forma inventada.
+        geometria = {
+            "type": "Point",
+            "coordinates": [sala.coord_interior.x, sala.coord_interior.y],
+        }
+    return {"type": "Feature", "properties": propiedades, "geometry": geometria}
 
 
-def _dibujar_punto(punto: PuntoInteres, capa: folium.FeatureGroup) -> None:
-    simbolo, color = SIMBOLOS.get(punto.tipo, ("•", COLOR_TEXTO))
-    folium.Marker(
-        location=punto.coord.como_lista(),
-        icon=_simbolo_html(simbolo, color),
-        tooltip=_tooltip(punto.nombre),
-        popup=_popup(punto.nombre),
-    ).add_to(capa)
+def _feature_punto(punto: PuntoInteres) -> dict:
+    """Feature GeoJSON de una referencia. El nombre se escapa: ver ``_feature_sala``."""
+    return {
+        "type": "Feature",
+        "properties": {"nombre": html.escape(punto.nombre)},
+        "geometry": {"type": "Point", "coordinates": [punto.coord.x, punto.coord.y]},
+    }
+
+
+def _tooltip(campos: list[str]) -> folium.GeoJsonTooltip:
+    return folium.GeoJsonTooltip(fields=campos, labels=False, sticky=True)
 
 
 def construir_mapa_interior(
@@ -140,12 +156,11 @@ def construir_mapa_interior(
     salas: list[Destino],
     resaltar_id: str | None = None,
 ) -> folium.Map:
-    del settings  # la vista interior no depende de la configuración del lienzo exterior
     bounds = [[0.0, 0.0], [planta.alto_m, planta.ancho_m]]
 
     mapa = folium.Map(
         location=[planta.alto_m / 2, planta.ancho_m / 2],
-        zoom_start=-1,
+        zoom_start=0,
         tiles=None,
         crs="Simple",
         zoom_control=True,
@@ -155,26 +170,86 @@ def construir_mapa_interior(
     mapa.options["zoomSnap"] = 0.25
     mapa.options["attributionControl"] = False
 
-    # Superficie del piso: es la caja de los muros del plano, no la silueta
-    # exacta del edificio. Sirve de fondo neutro para ubicar lo demás.
     folium.Rectangle(
         bounds=bounds,
-        color=COLOR_BORDE_PISO,
+        color=GRIS_FONDO,
         weight=1,
         fill=True,
-        fill_color=COLOR_PISO,
+        fill_color=GRIS_FONDO,
         fill_opacity=1,
         interactive=False,
     ).add_to(mapa)
 
-    capa = folium.FeatureGroup(name=f"Piso {planta.piso}")
-    for destino in salas:
-        if destino.sala is None or destino.sala.coord_interior is None:
-            continue
-        _dibujar_sala(destino, destino.id == resaltar_id, capa)
-    for punto in planta.puntos:
-        _dibujar_punto(punto, capa)
-    capa.add_to(mapa)
+    # 1. El piso completo: pasillos, halls, servicios, salas de máquinas.
+    folium.GeoJson(
+        geometria_de(settings, planta),
+        style_function=_estilo_recinto,
+        interactive=False,
+        name="Recintos",
+    ).add_to(mapa)
+
+    # 2. Los destinos: salas del catálogo. Verde bajo el cursor.
+    dibujables = [d for d in salas if d.sala is not None and d.sala.coord_interior is not None]
+    con_forma = [d for d in dibujables if d.sala.poligono_interior]
+    sin_forma = [d for d in dibujables if not d.sala.poligono_interior]
+
+    if con_forma:
+        folium.GeoJson(
+            {"type": "FeatureCollection", "features": [_feature_sala(d) for d in con_forma]},
+            style_function=_estilo_destino,
+            highlight_function=_estilo_cursor,
+            tooltip=_tooltip(["nombre"]),
+            name="Salas",
+        ).add_to(mapa)
+
+    if sin_forma:
+        folium.GeoJson(
+            {"type": "FeatureCollection", "features": [_feature_sala(d) for d in sin_forma]},
+            marker=folium.CircleMarker(
+                radius=11, color=GRIS_BORDE_DESTINO, weight=2, fill=True,
+                fill_color=GRIS_DESTINO, fill_opacity=1,
+            ),
+            style_function=_estilo_destino,
+            highlight_function=_estilo_cursor,
+            tooltip=_tooltip(["nombre"]),
+            name="Salas sin contorno",
+        ).add_to(mapa)
+
+    # 3. Referencias del piso: baños, piscina, ascensores, escaleras.
+    if planta.puntos:
+        folium.GeoJson(
+            {
+                "type": "FeatureCollection",
+                "features": [_feature_punto(p) for p in planta.puntos],
+            },
+            marker=folium.CircleMarker(
+                radius=9, color=GRIS_BORDE_DESTINO, weight=2, fill=True,
+                fill_color=BLANCO, fill_opacity=1,
+            ),
+            style_function=lambda f: {
+                "color": GRIS_BORDE_DESTINO, "weight": 2,
+                "fillColor": BLANCO, "fillOpacity": 1,
+            },
+            highlight_function=_estilo_cursor,
+            tooltip=_tooltip(["nombre"]),
+            name="Referencias",
+        ).add_to(mapa)
+        for punto in planta.puntos:
+            folium.Marker(
+                location=punto.coord.como_lista(),
+                icon=_simbolo(SIMBOLOS.get(punto.tipo, "•")),
+            ).add_to(mapa)
+
+    # 4. Etiquetas encima de todo.
+    for destino in dibujables:
+        folium.Marker(
+            location=destino.sala.coord_interior.como_lista(),
+            icon=_etiqueta(
+                destino.id,
+                VERDE if destino.id == resaltar_id else GRIS_TEXTO,
+                13 if destino.id == resaltar_id else 12,
+            ),
+        ).add_to(mapa)
 
     mapa.fit_bounds(bounds)
     return mapa

@@ -13,9 +13,10 @@ DWG (formato cerrado que no se puede leer sin AutoCAD). Para exportar: en
 AutoCAD, "Guardar como" → "DXF"; o con el visor gratuito DWG TrueView de
 Autodesk si no hay AutoCAD a mano.
 
-Instalar la dependencia (una sola vez; la aplicación no la necesita):
+Instalar las dependencias (una sola vez; la aplicación no las necesita):
 
-    pip install ezdxf
+    pip install ezdxf                      # para todo menos --recintos
+    pip install numpy scipy pillow matplotlib   # además, para --recintos
 
 Uso:
 
@@ -25,7 +26,10 @@ Uso:
     # 2. marco del piso y referencias (baños, ascensores, piscina…)
     python scripts/extraer_planta_dxf.py plano.dxf --puntos
 
-    # 3. contorno de una sala, dando la posición de su rótulo en el plano
+    # 3. el piso completo: todos sus recintos como figuras
+    python scripts/extraer_planta_dxf.py plano.dxf --recintos assets/plantas/XXX.geojson
+
+    # 4. ubicar una sala y sacar su contorno rectangular
     python scripts/extraer_planta_dxf.py plano.dxf --buscar "SALA DE CLASES"
     python scripts/extraer_planta_dxf.py plano.dxf --contorno 19726,12016
 
@@ -44,10 +48,12 @@ para que puedas confirmarlo de un vistazo: una puerta mide 0,8–1,1 m y un muro
 
 Dos reglas que este script respeta y conviene no saltarse:
 
-* El contorno de una sala solo se entrega si la sala resulta ser **rectangular
-  de verdad** (se comprueba lanzando 360 rayos y comparando el área real con
-  la del rectángulo). Si no lo es, se informa y la sala queda sin contorno:
-  se dibuja como punto, en vez de mostrarle al usuario una forma que no es.
+* Las formas salen del plano, no de la imaginación. `--recintos` las
+  reconstruye desde los muros trazados; `--contorno` solo entrega un
+  rectángulo si la sala resulta ser **rectangular de verdad** (lanza 360 rayos
+  y compara el área encerrada con la del rectángulo). Cuando no se puede
+  derivar, se informa y la sala queda sin contorno: se dibuja como punto, en
+  vez de mostrarle al usuario una forma que no es.
 * La correspondencia entre el rótulo del plano ("SALA DE CLASES 04") y el
   código oficial de la sala ("B01") **no se deduce**: hay que confirmarla en
   terreno. Ver docs/DEUDA_DATOS.md D-06.
@@ -56,6 +62,7 @@ Dos reglas que este script respeta y conviene no saltarse:
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import statistics
 import sys
@@ -71,6 +78,11 @@ except ImportError as exc:
         file=sys.stderr,
     )
     raise SystemExit(1) from exc
+
+# Solo hacen falta para --recintos; se importan al usarlo para que el resto
+# del script funcione sin ellas.
+CM_POR_PIXEL = 5.0   # resolución de la grilla al reconstruir recintos
+AREA_MIN_M2 = 4.0    # más chico que esto no es un recinto, es una junta
 
 # Capas que definen el espacio construido. El resto del plano (cotas, pilotes,
 # ductos de climatización, terreno…) es detalle de construcción.
@@ -180,6 +192,160 @@ def _area_visible(segmentos, px, py, n_rayos: int = 360) -> float:
     return _area(puntos)
 
 
+def _simplificar(puntos: list[list[float]], eps: float) -> list[list[float]]:
+    """Douglas-Peucker: quita los vértices que no cambian la forma."""
+    if len(puntos) < 3:
+        return puntos
+    ini, fin = puntos[0], puntos[-1]
+    dx, dy = fin[0] - ini[0], fin[1] - ini[1]
+    norma = (dx * dx + dy * dy) ** 0.5
+    peor, idx = 0.0, 0
+    for i in range(1, len(puntos) - 1):
+        p = puntos[i]
+        if norma < 1e-9:
+            d = ((p[0] - ini[0]) ** 2 + (p[1] - ini[1]) ** 2) ** 0.5
+        else:
+            d = abs(dy * p[0] - dx * p[1] + fin[0] * ini[1] - fin[1] * ini[0]) / norma
+        if d > peor:
+            peor, idx = d, i
+    if peor > eps:
+        return _simplificar(puntos[: idx + 1], eps)[:-1] + _simplificar(puntos[idx:], eps)
+    return [ini, fin]
+
+
+def _ortogonalizar(pts: list[list[float]], tol: float = 0.25) -> list[list[float]]:
+    """Endereza los tramos casi horizontales o casi verticales.
+
+    La grilla deja los bordes con dientes de sierra; el edificio es ortogonal
+    casi en todas partes, así que enderezarlos se acerca al plano, no se aleja.
+    """
+    out = [list(p) for p in pts]
+    for i in range(len(out) - 1):
+        a, b = out[i], out[i + 1]
+        if abs(a[1] - b[1]) < tol and abs(a[0] - b[0]) > tol:
+            y = (a[1] + b[1]) / 2
+            a[1] = b[1] = y
+        elif abs(a[0] - b[0]) < tol and abs(a[1] - b[1]) > tol:
+            x = (a[0] + b[0]) / 2
+            a[0] = b[0] = x
+    return [[round(p[0], 2), round(p[1], 2)] for p in out]
+
+
+def _reconstruir_recintos(msp, x0, y0, x1, y1, unidad_cm: float) -> list[dict]:
+    """Recintos del piso, a partir de los muros.
+
+    El plano no trae las salas como figuras cerradas: solo los trazos de sus
+    muros. Para obtener cada recinto se dibujan muros, tabiques, puertas y
+    ascensores sobre una grilla, se buscan las bolsas de espacio que quedan
+    cerradas entre ellos, y se traza el contorno de cada una.
+    """
+    try:
+        import numpy as np
+        from PIL import Image, ImageDraw
+        from scipy import ndimage
+    except ImportError as exc:  # pragma: no cover - depende del entorno
+        raise SystemExit(
+            "Para --recintos faltan librerías. Instálalas con:\n\n"
+            "    pip install numpy scipy pillow\n"
+        ) from exc
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    a_m = unidad_cm / 100
+    ancho_px = int((x1 - x0) / CM_POR_PIXEL) + 2
+    alto_px = int((y1 - y0) / CM_POR_PIXEL) + 2
+
+    def a_pixel(x, y):
+        return ((x - x0) / CM_POR_PIXEL, (y1 - y) / CM_POR_PIXEL)
+
+    imagen = Image.new("1", (ancho_px, alto_px), 0)
+    lapiz = ImageDraw.Draw(imagen)
+    barreras = CAPAS_MURO | {"PUERTAS-VENTANAS", "ASCENSORES"}
+    for e in msp:
+        if e.dxf.layer not in barreras:
+            continue
+        t = e.dxftype()
+        try:
+            if t == "LINE":
+                lapiz.line(
+                    [a_pixel(e.dxf.start.x, e.dxf.start.y), a_pixel(e.dxf.end.x, e.dxf.end.y)],
+                    fill=1, width=2,
+                )
+            elif t == "LWPOLYLINE":
+                pts = [(p[0], p[1]) for p in e.get_points()]
+                if e.closed:
+                    pts = pts + [pts[0]]
+                if len(pts) >= 2:
+                    lapiz.line([a_pixel(*p) for p in pts], fill=1, width=2)
+            elif t == "ARC":
+                c, r = e.dxf.center, e.dxf.radius
+                a0, a1 = math.radians(e.dxf.start_angle), math.radians(e.dxf.end_angle)
+                if a1 < a0:
+                    a1 += 2 * math.pi
+                n = max(6, int((a1 - a0) / 0.15))
+                pts = [
+                    (c.x + r * math.cos(a0 + (a1 - a0) * i / n),
+                     c.y + r * math.sin(a0 + (a1 - a0) * i / n))
+                    for i in range(n + 1)
+                ]
+                lapiz.line([a_pixel(*p) for p in pts], fill=1, width=2)
+            elif t == "CIRCLE":
+                c, r = e.dxf.center, e.dxf.radius
+                px0, py0 = a_pixel(c.x - r, c.y + r)
+                px1, py1 = a_pixel(c.x + r, c.y - r)
+                lapiz.ellipse([px0, py0, px1, py1], outline=1, width=2)
+        except Exception:  # noqa: BLE001
+            continue
+
+    muros = ndimage.binary_dilation(np.array(imagen, dtype=bool), iterations=1)
+    etiquetas, cuantas = ndimage.label(~muros)
+    del_borde = set(etiquetas[0, :]) | set(etiquetas[-1, :])
+    del_borde |= set(etiquetas[:, 0]) | set(etiquetas[:, -1])
+    del_borde.discard(0)
+
+    m2_por_pixel = CM_POR_PIXEL**2 / 10000.0
+    tamanos = ndimage.sum(np.ones_like(etiquetas), etiquetas, range(1, cuantas + 1))
+    cajas = ndimage.find_objects(etiquetas)
+
+    recintos: list[dict] = []
+    for etiqueta in range(1, cuantas + 1):
+        if etiqueta in del_borde or tamanos[etiqueta - 1] * m2_por_pixel < AREA_MIN_M2:
+            continue
+        caja = cajas[etiqueta - 1]
+        if caja is None:
+            continue
+        sub = np.pad((etiquetas[caja] == etiqueta).astype(float), 2)
+        fig = plt.figure()
+        ejes = fig.add_subplot(111)
+        caminos = [p.vertices for p in ejes.contour(sub, levels=[0.5]).get_paths()
+                   if len(p.vertices) >= 4]
+        plt.close(fig)
+        if not caminos:
+            continue
+        borde = max(caminos, key=len)
+        f0, c0 = caja[0].start - 2, caja[1].start - 2
+        pts = [
+            [round(float(c0 + p[0]) * CM_POR_PIXEL * a_m, 2),
+             round(float(alto_px - (f0 + p[1])) * CM_POR_PIXEL * a_m, 2)]
+            for p in borde
+        ]
+        forma = _ortogonalizar(_simplificar(pts, 0.18))
+        limpio = [forma[0]]
+        for p in forma[1:]:
+            if p != limpio[-1]:
+                limpio.append(p)
+        if len(limpio) < 4:
+            continue
+        n = len(limpio)
+        area = abs(sum(limpio[i][0] * limpio[(i + 1) % n][1]
+                       - limpio[(i + 1) % n][0] * limpio[i][1] for i in range(n))) / 2
+        if area >= AREA_MIN_M2:
+            recintos.append({"vertices": limpio, "area_m2": round(area, 1)})
+    recintos.sort(key=lambda r: -r["area_m2"])
+    return recintos
+
+
 def _texto_de(e) -> str | None:
     if e.dxftype() == "MTEXT":
         return e.plain_text()
@@ -224,6 +390,12 @@ def main() -> int:
     parser.add_argument(
         "--contorno",
         help="contorno de la sala que contiene este punto del dibujo, como x,y",
+    )
+    parser.add_argument(
+        "--recintos",
+        type=Path,
+        metavar="SALIDA.geojson",
+        help="reconstruye los recintos del piso y los escribe como GeoJSON",
     )
     parser.add_argument(
         "--unidad-cm",
@@ -291,6 +463,36 @@ def main() -> int:
                         print(f'  {{"nombre": "{limpio}", "tipo": "{tipo}", '
                               f'"coord": {coord}}},')
                     break
+
+    if args.recintos:
+        print("\nReconstruyendo los recintos del piso… (toma un momento)")
+        recintos = _reconstruir_recintos(msp, x0, y0, x1, y1, args.unidad_cm)
+        features = [
+            {
+                "type": "Feature",
+                "properties": {"area_m2": r["area_m2"]},
+                "geometry": {"type": "Polygon", "coordinates": [r["vertices"] + [r["vertices"][0]]]},
+            }
+            for r in recintos
+        ]
+        gj = {
+            "type": "FeatureCollection",
+            "properties": {
+                "fuente": f"Recintos reconstruidos de {args.dxf.name} con "
+                          "scripts/extraer_planta_dxf.py --recintos",
+                "unidades": "metros, origen abajo-izquierda, [x, y]",
+            },
+            "features": features,
+        }
+        args.recintos.parent.mkdir(parents=True, exist_ok=True)
+        args.recintos.write_text(
+            json.dumps(gj, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        cubierto = sum(r["area_m2"] for r in recintos)
+        print(f"  {len(recintos)} recintos, {cubierto:.0f} m2 cubiertos")
+        print(f"  escrito en {args.recintos}")
+        print("  Recuerda sacar de este archivo los recintos que sean salas del")
+        print("  catálogo: esos van como `poligono_interior` en data/salas.json.")
 
     if args.contorno:
         px, py = (float(v) for v in args.contorno.split(","))

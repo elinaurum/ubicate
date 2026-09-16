@@ -124,6 +124,11 @@ class Settings(BaseSettings):
         return self.dir_datos / "plantas.json"
 
     @property
+    def dir_plantas(self) -> Path:
+        """Geometría de los planos interiores (ver PlantaInterior.geometria)."""
+        return self.dir_assets / "plantas"
+
+    @property
     def ruta_imagen_mapa(self) -> Path:
         return self.dir_assets / self.mapa_imagen
 

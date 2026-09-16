@@ -1,6 +1,6 @@
-"""Vista interior de un piso, dibujada como vector (ver ADR-0009)."""
+"""Vista interior de un piso: el piso completo dibujado como vector (ADR-0009)."""
 
-from ubicate.mapa.interior import mapa_interior_html
+from ubicate.mapa.interior import geometria_de, mapa_interior_html
 
 
 def _planta_y_salas(repo):
@@ -16,17 +16,37 @@ def test_dibuja_las_salas_de_la_planta(settings, repo):
     assert "Sala B08" in html
 
 
-def test_la_sala_con_contorno_se_dibuja_como_poligono(settings, repo):
+def test_dibuja_el_piso_completo_no_solo_las_salas(settings, repo):
+    """El piso se modela entero: los recintos comunes (pasillos, halls,
+    servicios) también se dibujan, no solo las 8 salas del catálogo."""
     planta, salas = _planta_y_salas(repo)
+    recintos = geometria_de(settings, planta)
+    assert len(recintos["features"]) > 100, "faltan los recintos del piso"
     html = mapa_interior_html(settings, planta, salas)
-    assert "L.polygon" in html
+    assert html.count('"type": "Polygon"') > 100
+
+
+def test_todas_las_salas_tienen_contorno(settings, repo):
+    """Incluidas las hexagonales: se reconstruyen desde los muros."""
+    planta, salas = _planta_y_salas(repo)
+    del planta
+    for destino in salas:
+        assert destino.sala.poligono_interior, f"{destino.id} sin contorno"
 
 
 def test_no_incrusta_el_plano_cad_como_imagen(settings, repo):
-    """El rediseño dejó de usar la imagen del DXF: si vuelve, es una regresión."""
+    """El piso es vector: si vuelve una imagen del DXF, es una regresión."""
     planta, salas = _planta_y_salas(repo)
     html = mapa_interior_html(settings, planta, salas)
     assert "data:image/png;base64" not in html
+
+
+def test_resalta_en_verde_bajo_el_cursor(settings, repo):
+    """El único verde de la vista es la retroalimentación del cursor."""
+    planta, salas = _planta_y_salas(repo)
+    html = mapa_interior_html(settings, planta, salas)
+    assert "#1E8449" in html  # borde verde
+    assert "#A9DFBF" in html  # relleno verde
 
 
 def test_incluye_las_referencias_del_piso(settings, repo):
@@ -37,9 +57,8 @@ def test_incluye_las_referencias_del_piso(settings, repo):
 
 
 def test_escapa_el_contenido_de_los_datos(settings, repo):
-    """Un rótulo malicioso en el JSON no debe inyectarse como HTML."""
-    import dataclasses
-
+    """``GeoJsonTooltip`` inserta el valor con ``innerHTML``: un rótulo con
+    ``<img onerror=…>`` se ejecutaría si no se escapa (ACT-011)."""
     from ubicate.modelos import PuntoInteres, TipoPunto
 
     planta, salas = _planta_y_salas(repo)
@@ -47,17 +66,17 @@ def test_escapa_el_contenido_de_los_datos(settings, repo):
         update={
             "puntos": (
                 PuntoInteres(
-                    nombre="<script>alert(1)</script>",
+                    nombre="<img src=x onerror=alert(1)>",
                     tipo=TipoPunto.BANO,
                     coord=planta.puntos[0].coord,
                 ),
             )
         }
     )
-    del dataclasses
     html = mapa_interior_html(settings, sucia, salas)
-    assert "<script>alert(1)</script>" not in html
-    assert "&lt;script&gt;" in html
+    # Lo peligroso es que llegue una etiqueta abierta; escapada es solo texto.
+    assert "<img" not in html
+    assert "lt;img" in html, "el rótulo debería llegar escapado, no desaparecer"
 
 
 def test_sin_salas_no_falla(settings, repo):

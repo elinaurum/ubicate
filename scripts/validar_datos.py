@@ -60,11 +60,25 @@ def main() -> int:
     for planta in repo.plantas():
         salas_dibujadas = repo.salas_en_planta(planta)
         con_forma = sum(1 for s in salas_dibujadas if s.sala.poligono_interior)
+        recintos = 0
+        if planta.geometria:
+            archivo = settings.dir_plantas / planta.geometria
+            if not archivo.exists():
+                print(f"[{FALLA}] falta la geometría de la planta {planta.id} en {archivo}")
+                errores += 1
+            else:
+                import json as _json
+
+                recintos = len(_json.loads(archivo.read_text(encoding="utf-8"))["features"])
         print(
             f"[{OK}] planta {planta.id} (piso {planta.piso}): "
-            f"{planta.ancho_m}x{planta.alto_m} m, {len(salas_dibujadas)} salas "
-            f"({con_forma} con contorno), {len(planta.puntos)} referencias"
+            f"{planta.ancho_m}x{planta.alto_m} m, {recintos} recintos, "
+            f"{len(salas_dibujadas)} salas ({con_forma} con contorno), "
+            f"{len(planta.puntos)} referencias"
         )
+        if not planta.geometria:
+            print(f"[{AVISO}] la planta {planta.id} no tiene geometría: se verá vacía")
+            avisos += 1
         sin_forma = [s.id for s in salas_dibujadas if not s.sala.poligono_interior]
         if sin_forma:
             print(

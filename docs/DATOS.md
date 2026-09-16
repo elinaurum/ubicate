@@ -183,6 +183,7 @@ vector** —formas y símbolos—, no como imagen del plano de arquitectura.
 | `acceso` | enum | sí | `"850"` o `"851"` — junto con `piso`, identifica el plano |
 | `piso` | entero | sí | El mismo número que usa `salas.json` |
 | `ancho_m`, `alto_m` | número | sí | Tamaño real del piso en metros: envolvente de los muros |
+| `geometria` | texto | no | Archivo GeoJSON en `assets/plantas/` con los recintos del piso. **Se genera, no se edita a mano** |
 | `puntos` | lista | no | Referencias del piso (ver abajo) |
 | `fuente` | texto | no | De dónde salió el plano y cómo se procesó |
 | `activo` | booleano | no | `false` oculta la planta sin borrarla |
@@ -206,14 +207,26 @@ imprime medidas de control —ancho de puerta, espesor de muro— para
 confirmarlo: **una puerta mide 0,8–1,1 m y un muro 0,2–0,3 m**. Si esos
 números salen absurdos, la escala del archivo es otra.
 
+### Los recintos: el piso completo
+
+El plano **no trae las salas como figuras cerradas**: solo los trazos de sus
+muros. `scripts/extraer_planta_dxf.py --recintos` los reconstruye: dibuja
+muros, tabiques, puertas y ascensores sobre una grilla, busca las bolsas de
+espacio que quedan cerradas entre ellos, y traza el contorno de cada una. El
+resultado es un GeoJSON en `assets/plantas/` con un polígono por recinto
+—sala, pasillo, hall, sala de máquinas—, en metros.
+
+Los recintos que son salas del catálogo se sacan de ese archivo y su contorno
+pasa a `poligono_interior` en `salas.json`: así el mapa sabe cuáles responden
+al cursor y cuáles son solo fondo.
+
 ### Contornos: solo si son ciertos
 
-`Sala.poligono_interior` se carga **solo cuando la sala es rectangular de
-verdad**. El script lo comprueba lanzando rayos en todas las direcciones y
-comparando el área encerrada con la del rectángulo: si no coinciden (sala
-hexagonal, en L, abierta a un pasillo), no entrega contorno y la sala se
-dibuja como punto. Es la regla 3.1 aplicada a la geometría: mejor un punto
-correcto que una forma inventada.
+Un contorno se carga **solo si se pudo derivar del plano**. `--recintos` lo
+deriva de los muros; `--contorno` entrega un rectángulo solo si la sala es
+rectangular de verdad (compara el área encerrada con la del rectángulo). Si no
+se puede, la sala queda sin contorno y se dibuja como punto. Es la regla 3.1
+aplicada a la geometría: mejor un punto correcto que una forma inventada.
 
 ### Agregar un piso nuevo
 
@@ -228,6 +241,13 @@ correcto que una forma inventada.
 
    Copiar `ancho_m`, `alto_m` y la lista de `puntos` a `data/plantas.json`.
    **Revisar la medida de control de la puerta antes de seguir.**
+3b. Recintos del piso (necesita además `numpy`, `scipy` y `pillow`):
+
+   ```bash
+   python scripts/extraer_planta_dxf.py plano.dxf --recintos assets/plantas/<archivo>.geojson
+   ```
+
+   Anotar el nombre del archivo en el campo `geometria` de la planta.
 4. Ubicar cada sala y sacar su contorno:
 
    ```bash

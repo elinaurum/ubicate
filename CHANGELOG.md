@@ -20,23 +20,28 @@ desplegar.
 Vista interior del piso -1 del edificio 851, separada del mapa exterior y
 dibujada como vector.
 Notas: [ACT-009](docs/actualizaciones/ACT-009-vista-interior-piso-menos1-851.md)
-(diseño inicial) y
+(diseño inicial),
 [ACT-010](docs/actualizaciones/ACT-010-vista-vectorial-y-escala-del-plano.md)
 (rediseño vectorial y corrección de escala; **corrige medidas publicadas en
-ACT-009**).
+ACT-009**) y
+[ACT-011](docs/actualizaciones/ACT-011-piso-completo-como-recintos.md)
+(el piso completo, recinto por recinto).
 Decisión: [ADR-0009](docs/decisiones/ADR-0009-vista-interior-de-piso.md).
 
 ### Agregado
 
 * **Plano interior del piso -1 (851).** Nueva vista, aparte del mapa exterior,
-  dibujada como vector: cada sala es una forma con su etiqueta y cada
-  referencia (baño, piscina, camarín, ascensor, escalera) es un símbolo. Se
-  abre desde un desplegable en la ficha de la sala.
+  con **el piso completo dibujado como vector**: 193 recintos —salas,
+  pasillos, halls, servicios— cada uno una figura con su borde y su relleno,
+  con la forma que tiene en el plano. Se abre desde un desplegable en la ficha
+  de la sala.
+* **Las 8 salas `B01`–`B08` con su contorno real**, incluidas las hexagonales.
+  Los recintos se reconstruyen a partir de los muros del plano, no se dibujan
+  a mano ni se aproximan.
 * **24 referencias del piso** tomadas del rótulo del plano: la piscina, 2
   camarines, 7 vestíbulos de baño, 4 halls de ascensor y 8 escaleras.
-* **Contorno real de 5 salas** (`B01`–`B04`, 9,80 × 4,70 m cada una, y `B07`).
-  Las hexagonales (`B05`, `B06`, `B08`) se dibujan como punto: el rectángulo
-  no las representa y no se les inventa una forma.
+* **Resaltado verde bajo el cursor.** Todo el piso es gris; el verde se usa
+  solo para indicar sobre qué destino está el cursor.
 * `data/plantas.json` y los modelos `PlantaInterior`, `PuntoInteres` y
   `TipoPunto` (`modelos.py`): esquema de los planos interiores por piso.
 * `Sala.coord_interior` y `Sala.poligono_interior`: posición y contorno de una
@@ -44,9 +49,9 @@ Decisión: [ADR-0009](docs/decisiones/ADR-0009-vista-interior-de-piso.md).
 * `mapa/interior.py`: construcción del mapa interior (mismo patrón que
   `mapa/render.py`, ver ADR-0004), sin importar Streamlit.
 * `scripts/extraer_planta_dxf.py`: herramienta para sacar de un plano DXF el
-  marco del piso, el contorno de una sala y sus referencias. Se corre a mano,
-  una vez por piso; no es dependencia de la aplicación
-  (`pip install .[planos]`).
+  marco del piso, sus recintos (`--recintos`), el contorno de una sala y sus
+  referencias. Se corre a mano, una vez por piso; no es dependencia de la
+  aplicación (`pip install .[planos]`).
 
 ### Corregido
 
@@ -63,6 +68,9 @@ Decisión: [ADR-0009](docs/decisiones/ADR-0009-vista-interior-de-piso.md).
   Afectaba también a `mapa/render.py`, el mapa exterior ya en producción. Los
   popups siempre se escaparon; los tooltips no. Corregido en ambos módulos,
   con prueba de regresión.
+* **`GeoJsonTooltip` sin escapar.** Misma familia de problema por otra vía: el
+  valor termina insertado con `innerHTML`, así que un rótulo con
+  `<img src=x onerror=…>` se ejecutaba. Se escapa al construir las *features*.
 
 ### Cambiado
 

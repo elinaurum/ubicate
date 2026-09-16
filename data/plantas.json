@@ -5,7 +5,7 @@
     "piso": -1,
     "ancho_m": 101.82,
     "alto_m": 71.15,
-    "fuente": "Plano de arquitectura piso -1 (\"007_SUBTE 1_PBP\"), entregado por el equipo. Marco = envolvente de las capas MUROS y TABIQUES. El dibujo está en centímetros pese a que su encabezado declara milímetros (ver ACT-010). Extraído con scripts/extraer_planta_dxf.py.",
+    "geometria": "851_SUBTE1.geojson",
     "puntos": [
       {
         "nombre": "HALL ASCENSOR 1",
@@ -200,6 +200,7 @@
         ]
       }
     ],
+    "fuente": "Plano de arquitectura piso -1 (\"007_SUBTE 1_PBP\"), entregado por el equipo. Marco = envolvente de las capas MUROS y TABIQUES. El dibujo está en centímetros pese a que su encabezado declara milímetros (ver ACT-010). Extraído con scripts/extraer_planta_dxf.py.",
     "activo": true
   }
 ]

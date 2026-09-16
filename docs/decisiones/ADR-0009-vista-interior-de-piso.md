@@ -41,18 +41,26 @@ Dos hallazgos del trabajo exploratorio, antes de decidir:
    guarda el tamaño real del piso (`ancho_m`, `alto_m`) y sus referencias.
 3. **Nuevo archivo `data/plantas.json`** y modelo `PlantaInterior` en
    `modelos.py`. Documentado en `docs/DATOS.md` §6.
-4. **Se dibuja como vector, no como imagen del plano CAD.** Cada sala es
-   una forma con su color y etiqueta; cada referencia (baño, ascensor,
-   piscina, escalera, camarín) es un símbolo. El dibujo de arquitectura trae
-   cotas, ductos, pilotes y rótulos de construcción que estorban a quien solo
-   quiere ubicarse, y su paleta es técnica, no de producto.
-5. **Un contorno solo se dibuja si es cierto.** `Sala.poligono_interior` se
-   carga únicamente cuando la sala resulta rectangular de verdad (se comprueba
-   comparando el área realmente encerrada por los muros con la del
-   rectángulo). Si no lo es —las salas hexagonales del piso -1—, la sala se
-   dibuja como punto. Es la regla 3.1 aplicada a la geometría: mejor un punto
-   correcto que una forma inventada.
-6. **La extracción del DXF es una herramienta aparte**
+4. **Se dibuja el piso completo como vector, no como imagen del plano CAD.**
+   Cada recinto —sala, pasillo, hall, baño, sala de máquinas— es una figura
+   con su borde y su relleno, con la forma que tiene en el plano. El dibujo de
+   arquitectura trae cotas, ductos, pilotes y rótulos de construcción que
+   estorban a quien solo quiere ubicarse, y su paleta es técnica, no de
+   producto.
+5. **Los recintos se reconstruyen desde los muros.** El plano no trae las
+   salas como figuras cerradas, así que se dibujan muros, tabiques, puertas y
+   ascensores sobre una grilla, se buscan las bolsas de espacio cerradas entre
+   ellos y se traza el contorno de cada una
+   (`scripts/extraer_planta_dxf.py --recintos`). El resultado vive en un
+   GeoJSON en `assets/plantas/`, referenciado desde `PlantaInterior.geometria`.
+6. **Todo gris; el verde es del cursor.** El piso entero se dibuja en grises.
+   El verde queda reservado para una sola cosa: indicar que el cursor está
+   sobre un destino. Así el color significa algo en vez de decorar.
+7. **Un contorno solo se dibuja si es cierto.** Si un recinto no se puede
+   derivar del plano, la sala queda sin contorno y se dibuja como punto. Es la
+   regla 3.1 aplicada a la geometría: mejor un punto correcto que una forma
+   inventada.
+8. **La extracción del DXF es una herramienta aparte**
    (`scripts/extraer_planta_dxf.py`), con `ezdxf` como dependencia opcional
    (`pip install .[planos]`) — nunca en tiempo de ejecución de la aplicación.
    Se corre una vez por piso; el resultado (medidas y coordenadas) es lo que
@@ -75,8 +83,14 @@ Dos hallazgos del trabajo exploratorio, antes de decidir:
 3. **Incrustar el dibujo del plano como imagen de fondo.** Fue la primera
    versión y se descartó tras verla: se ve como un plano de obra (colores por
    capa técnica, cotas, ductos), pesa ~120 KB en base64 por piso, y no deja
-   resaltar una sala ni distinguir un baño de un ascensor. El vector pesa la
-   mitad y se entiende de una mirada.
+   resaltar una sala ni distinguir un baño de un ascensor.
+4. **Dibujar solo las salas del catálogo, sobre fondo vacío.** Fue la segunda
+   versión y el equipo la rechazó: sin el resto del piso, las salas quedan
+   flotando y no se entiende dónde están. El piso hay que modelarlo entero.
+5. **Dibujar los muros como líneas, sin recintos.** Fiel al trazado y barato
+   (235 KB de líneas), pero se lee como un plano técnico, no como un mapa, y
+   no permite que una sala responda al cursor. Los recintos pesan menos
+   (46 KB) y sí son figuras.
 
 ## Consecuencias
 
@@ -102,10 +116,11 @@ Dos hallazgos del trabajo exploratorio, antes de decidir:
 - Los DWG/DXF originales no quedan en el repositorio (pesan varios MB cada
   uno). Si hace falta reprocesar un piso con otras capas, hay que volver a
   pedirlos.
-- Tres de las ocho salas del piso -1 (B05, B06, B08) se dibujan como punto y
-  no como forma: son hexagonales y el rectángulo no las representa. Darles su
-  forma real exige trazar el contorno a mano o resolver la reconstrucción de
-  polígonos a partir de muros, que es un problema aparte.
-- El piso se dibuja sobre un rectángulo gris que es la **caja** de los muros,
-  no la silueta real del edificio. Es fondo neutro para ubicar lo demás, no un
-  dato sobre la forma del piso.
+- La reconstrucción pasa por una grilla de 5 cm, así que los bordes tienen
+  una precisión de ese orden y se enderezan los tramos casi rectos. Para
+  ubicarse es de sobra; no sirve para medir ni para un plano de obra.
+- Un recinto se reconstruye solo si queda **cerrado** por muros o puertas. Un
+  espacio abierto a un pasillo se funde con él en una sola figura: por eso hay
+  un recinto grande de ~850 m² que es todo el sistema de circulación.
+- El GeoJSON se genera, no se edita a mano. Si cambia el plano hay que volver
+  a correr el script; no tiene sentido corregirlo a mano vértice por vértice.
