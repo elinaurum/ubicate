@@ -35,11 +35,17 @@ Decisión: [ADR-0009](docs/decisiones/ADR-0009-vista-interior-de-piso.md).
   pasillos, halls, servicios— cada uno una figura con su borde y su relleno,
   con la forma que tiene en el plano. Se abre desde un desplegable en la ficha
   de la sala.
-* **Las 8 salas `B01`–`B08` con su contorno real**, incluidas las hexagonales.
+* **Las 9 salas `B01`–`B09` con su contorno real**, incluidas las hexagonales.
   Los recintos se reconstruyen a partir de los muros del plano, no se dibujan
-  a mano ni se aproximan.
+  a mano ni se aproximan. `B09` se agregó al confirmar el equipo su código y su
+  departamento.
 * **24 referencias del piso** tomadas del rótulo del plano: la piscina, 2
-  camarines, 7 vestíbulos de baño, 4 halls de ascensor y 8 escaleras.
+  camarines, 7 vestíbulos de baño, 4 halls de ascensor y 8 escaleras. **15 de
+  ellas se dibujan como figura** (todos los baños, los camarines, la piscina y
+  3 escaleras); el resto queda como símbolo porque el plano no les da un
+  recinto propio.
+* **La piscina, 25,00 × 12,50 m**, derivada del rectángulo cerrado de sus
+  cuatro muros: los andariveles dibujados dentro la fragmentaban.
 * **Resaltado verde bajo el cursor.** Todo el piso es gris; el verde se usa
   solo para indicar sobre qué destino está el cursor.
 * `data/plantas.json` y los modelos `PlantaInterior`, `PuntoInteres` y

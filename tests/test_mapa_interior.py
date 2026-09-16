@@ -56,6 +56,16 @@ def test_incluye_las_referencias_del_piso(settings, repo):
     assert "CAMARIN HOMBRES" in html
 
 
+def test_las_referencias_con_recinto_se_dibujan_como_figura(settings, repo):
+    """La piscina, los camarines y los baños son figuras, no solo un símbolo."""
+    planta, salas = _planta_y_salas(repo)
+    piscina = next(p for p in planta.puntos if p.nombre == "PISCINA")
+    assert piscina.poligono, "la piscina debería tener recinto"
+    html = mapa_interior_html(settings, planta, salas)
+    # su primer vértice tiene que aparecer dibujado
+    assert str(piscina.poligono[0].x) in html
+
+
 def test_escapa_el_contenido_de_los_datos(settings, repo):
     """``GeoJsonTooltip`` inserta el valor con ``innerHTML``: un rótulo con
     ``<img onerror=…>`` se ejecutaría si no se escapa (ACT-011)."""

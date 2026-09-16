@@ -100,7 +100,24 @@ def test_sala_sin_planta_levantada_no_falla(repo):
     assert repo.planta_de(repo.destino("F21")) is None
 
 
-def test_salas_en_planta_incluye_las_ocho_confirmadas(repo):
+def test_salas_en_planta_incluye_las_confirmadas(repo):
     planta = repo.planta_de(repo.destino("B01"))
     ids = {d.id for d in repo.salas_en_planta(planta)}
-    assert ids == {"B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08"}
+    assert ids == {"B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09"}
+
+
+def test_las_referencias_con_recinto_tienen_forma(repo):
+    """Baños, camarines y piscina se dibujan como figura; los halls de
+    ascensor y la mayoría de las escaleras no tienen recinto propio en el
+    plano y quedan como símbolo (ver ACT-011)."""
+    planta = repo.planta_de(repo.destino("B01"))
+    con_forma = [p for p in planta.puntos if p.poligono]
+    assert len(con_forma) >= 12
+    nombres = {p.nombre for p in con_forma}
+    assert "PISCINA" in nombres
+    assert "CAMARIN HOMBRES" in nombres
+    assert any(n.startswith("VESTIBULO BAÑO") for n in nombres)
+    for p in con_forma:
+        for c in p.poligono:
+            assert 0 <= c.y <= planta.alto_m
+            assert 0 <= c.x <= planta.ancho_m

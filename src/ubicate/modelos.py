@@ -154,6 +154,12 @@ class PuntoInteres(BaseModel):
 
     El nombre es el rótulo textual del plano de arquitectura, no uno
     inventado: si el plano dice "VESTIBULO BAÑO ALUMNAS 1", eso se guarda.
+
+    ``poligono`` es el recinto que ocupa, cuando el plano lo encierra como un
+    espacio propio. Queda en None para lo que no tiene recinto —un hall de
+    ascensores está dentro de la circulación, una escalera está trazada con
+    sus peldaños— y en ese caso se dibuja solo el símbolo. No se le inventa
+    una forma (regla 3.1).
     """
 
     model_config = ConfigDict(frozen=True)
@@ -161,6 +167,14 @@ class PuntoInteres(BaseModel):
     nombre: str = Field(min_length=2)
     tipo: TipoPunto
     coord: Coordenada
+    poligono: tuple[Coordenada, ...] | None = None
+
+    @field_validator("poligono")
+    @classmethod
+    def _poligono_suficiente(cls, v):
+        if v is not None and len(v) < 3:
+            raise ValueError("poligono necesita al menos 3 vértices")
+        return v
 
 
 class PlantaInterior(BaseModel):

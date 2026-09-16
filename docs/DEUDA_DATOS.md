@@ -81,10 +81,10 @@ Requiere autorización institucional antes de cualquier implementación.
 
 ---
 
-## D-06 · Correspondencia entre `B01`–`B08` y las salas del plano de planta -1
+## D-06 · Correspondencia entre las salas `B` y los rótulos del plano de planta -1
 
 **Estado:** parcialmente resuelta (2026-09-15) · **Impacto:** bajo para
-`B01`–`B08` (ya confirmado); alto para las 2 salas que faltan.
+`B01`–`B09` (ya confirmadas); medio para la sala que falta.
 
 El plano de arquitectura del piso -1 (`007_SUBTE 1_PBP.dxf`, ver ADR-0009)
 rotula sus salas de clase como "SALA DE CLASES 01" a "10", en dos pasillos
@@ -108,19 +108,20 @@ arriesgar asignar mal una sala.
 | B07 | SALA DE CLASES 07 |
 | B08 | SALA DE CLASES 06 |
 
-**Sigue abierto:** "SALA DE CLASES 05" y "SALA DE CLASES 09" no tienen código
-`B` confirmado. El equipo mencionó "B09" para la 05 (con más confianza) y "B10"
-para la 09 (dicho como intuición propia, explícitamente sin confirmar) — **no
-se cargó ninguna de las dos** porque no cumplen el estándar de esta regla: un
-dato con seguridad a medias se anota, no se escribe. Además, cada una de las 3
-salas con forma de hexágono del plano (incluidas B05–B08) contiene **dos**
-rótulos de "SALA DE CLASES" muy próximos entre sí — falta confirmar si son
-de verdad dos salas separadas (un tabique al medio) o una sola sala con dos
-números.
+**Resuelto también (2026-09-15):** `B09` = "SALA DE CLASES 05". El equipo
+confirmó además que pertenece a **Mecánica** (`851_INGMEC`); el plano no nombra
+departamentos, así que ese dato no se podía deducir de él. Ya está cargada.
 
-**Qué hay que hacer:** confirmar en terreno el código oficial de "SALA DE
-CLASES 05" y "09", y si las salas pareadas en cada hexágono son una sala o
-dos. Con eso, agregar las filas que falten a `data/salas.json`.
+**Sigue abierto:** "SALA DE CLASES 09" no tiene código confirmado. El equipo
+mencionó "B10" como intuición propia, explícitamente sin confirmar, así que
+**no se cargó**: un dato con seguridad a medias se anota, no se escribe.
+Falta también confirmar si las salas pareadas dentro de cada módulo hexagonal
+(B06/B07, B08/B09) son de verdad dos salas separadas por un tabique o una sola
+con dos números — la reconstrucción del plano las muestra como recintos
+separados, lo que apunta a que son dos, pero conviene verlo en terreno.
+
+**Qué hay que hacer:** confirmar el código oficial de "SALA DE CLASES 09" y su
+departamento, y agregar la fila que falte a `data/salas.json`.
 
 ---
 

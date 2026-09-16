@@ -33,6 +33,10 @@ Uso:
     python scripts/extraer_planta_dxf.py plano.dxf --buscar "SALA DE CLASES"
     python scripts/extraer_planta_dxf.py plano.dxf --contorno 19726,12016
 
+    # 5. contorno ignorando subdivisiones interiores (andariveles, peldaños):
+    #    así se obtuvo la piscina del piso -1, 25,00 x 12,50 m
+    python scripts/extraer_planta_dxf.py plano.dxf --contorno 13637,14713         --capas-muro MUROS --min-muro 500
+
 ## Sobre la escala
 
 **No confíes en el encabezado del archivo.** Los planos de Beauchef 851
@@ -82,7 +86,7 @@ except ImportError as exc:
 # Solo hacen falta para --recintos; se importan al usarlo para que el resto
 # del script funcione sin ellas.
 CM_POR_PIXEL = 5.0   # resolución de la grilla al reconstruir recintos
-AREA_MIN_M2 = 4.0    # más chico que esto no es un recinto, es una junta
+AREA_MIN_M2 = 1.5    # más chico que esto no es un recinto, es una junta
 
 # Capas que definen el espacio construido. El resto del plano (cotas, pilotes,
 # ductos de climatización, terreno…) es detalle de construcción.
@@ -104,10 +108,11 @@ MAX_RAYO = 2000    # largo máximo de un rayo, en unidades de dibujo
 RAZON_RECTA = 0.97  # área real / área del rectángulo para aceptar el contorno
 
 
-def _segmentos_de_muro(msp) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+def _segmentos_de_muro(msp, capas=None) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    capas = capas or CAPAS_MURO
     segmentos = []
     for e in msp:
-        if e.dxf.layer not in CAPAS_MURO:
+        if e.dxf.layer not in capas:
             continue
         t = e.dxftype()
         try:
@@ -145,6 +150,49 @@ def _corta(px, py, dx, dy, a, b) -> float | None:
     t = ((x1 - px) * sy - (y1 - py) * sx) / den
     u = ((x1 - px) * dy - (y1 - py) * dx) / den
     return t if (t > 1e-6 and -1e-9 <= u <= 1 + 1e-9) else None
+
+
+def _rectangulo_cerrado(msp, px: float, py: float, capa: str = "MUROS"):
+    """El rectángulo cerrado de muros más chico que contiene el punto.
+
+    Busca cuatro líneas de ``capa`` que se unan por sus extremos formando un
+    rectángulo. Es lo que hace falta cuando la reconstrucción por grilla
+    fragmenta un recinto por sus subdivisiones interiores: la piscina del piso
+    -1 está trazada como un rectángulo cerrado de 25,00 x 12,50 m, pero los
+    andariveles dibujados dentro la cortaban en franjas de 3,30 m (ACT-011).
+    """
+    horizontales: dict[float, list[tuple[float, float]]] = {}
+    verticales: dict[float, list[tuple[float, float]]] = {}
+    for e in msp:
+        if e.dxf.layer != capa or e.dxftype() != "LINE":
+            continue
+        a, b = e.dxf.start, e.dxf.end
+        if abs(a.y - b.y) < TOL and abs(a.x - b.x) > TOL:
+            horizontales.setdefault(round(a.y, 1), []).append((min(a.x, b.x), max(a.x, b.x)))
+        elif abs(a.x - b.x) < TOL and abs(a.y - b.y) > TOL:
+            verticales.setdefault(round(a.x, 1), []).append((min(a.y, b.y), max(a.y, b.y)))
+
+    abajo = sorted(y for y in horizontales if y < py)
+    arriba = sorted((y for y in horizontales if y > py), reverse=True)
+    izq = sorted(x for x in verticales if x < px)
+    der = sorted((x for x in verticales if x > px), reverse=True)
+
+    mejor = None
+    for y0 in reversed(abajo):
+        for y1 in reversed(arriba):
+            for x0 in reversed(izq):
+                for x1 in reversed(der):
+                    if mejor and (x1 - x0) * (y1 - y0) >= mejor[4]:
+                        continue
+                    cubre = (
+                        any(a - TOL <= x0 and b + TOL >= x1 for a, b in horizontales[y0])
+                        and any(a - TOL <= x0 and b + TOL >= x1 for a, b in horizontales[y1])
+                        and any(a - TOL <= y0 and b + TOL >= y1 for a, b in verticales[x0])
+                        and any(a - TOL <= y0 and b + TOL >= y1 for a, b in verticales[x1])
+                    )
+                    if cubre:
+                        mejor = (x0, y0, x1, y1, (x1 - x0) * (y1 - y0))
+    return mejor
 
 
 def _golpe_ortogonal(segmentos, px, py, dx, dy) -> float | None:
@@ -398,6 +446,12 @@ def main() -> int:
         help="reconstruye los recintos del piso y los escribe como GeoJSON",
     )
     parser.add_argument(
+        "--rectangulo",
+        metavar="X,Y",
+        help="busca el rectángulo cerrado de muros que contiene el punto, "
+             "ignorando lo que haya dibujado dentro (andariveles, peldaños)",
+    )
+    parser.add_argument(
         "--unidad-cm",
         type=float,
         default=1.0,
@@ -493,6 +547,17 @@ def main() -> int:
         print(f"  escrito en {args.recintos}")
         print("  Recuerda sacar de este archivo los recintos que sean salas del")
         print("  catálogo: esos van como `poligono_interior` en data/salas.json.")
+
+    if args.rectangulo:
+        px, py = (float(v) for v in args.rectangulo.split(","))
+        encontrado = _rectangulo_cerrado(msp, px, py)
+        print(f"\nRectángulo cerrado alrededor de ({px:.0f}, {py:.0f}):")
+        if not encontrado:
+            print("  no hay ninguno: el punto no está dentro de un rectángulo de muros.")
+        else:
+            rx0, ry0, rx1, ry1, _ = encontrado
+            print(f"  medidas: {(rx1 - rx0) * a_m:.2f} x {(ry1 - ry0) * a_m:.2f} m")
+            print(f'  "poligono": {[local(rx0, ry0), local(rx1, ry0), local(rx1, ry1), local(rx0, ry1)]}')
 
     if args.contorno:
         px, py = (float(v) for v in args.contorno.split(","))

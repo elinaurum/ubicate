@@ -138,11 +138,20 @@ def _feature_sala(destino: Destino) -> dict:
 
 
 def _feature_punto(punto: PuntoInteres) -> dict:
-    """Feature GeoJSON de una referencia. El nombre se escapa: ver ``_feature_sala``."""
+    """Feature GeoJSON de una referencia. El nombre se escapa: ver ``_feature_sala``.
+
+    Con recinto propio en el plano se dibuja su forma; sin él, un punto.
+    """
+    if punto.poligono:
+        anillo = [[c.x, c.y] for c in punto.poligono]
+        anillo.append(anillo[0])
+        geometria = {"type": "Polygon", "coordinates": [anillo]}
+    else:
+        geometria = {"type": "Point", "coordinates": [punto.coord.x, punto.coord.y]}
     return {
         "type": "Feature",
         "properties": {"nombre": html.escape(punto.nombre)},
-        "geometry": {"type": "Point", "coordinates": [punto.coord.x, punto.coord.y]},
+        "geometry": geometria,
     }
 
 
@@ -215,13 +224,23 @@ def construir_mapa_interior(
             name="Salas sin contorno",
         ).add_to(mapa)
 
-    # 3. Referencias del piso: baños, piscina, ascensores, escaleras.
-    if planta.puntos:
+    # 3. Referencias del piso: baños, piscina, camarines, ascensores, escaleras.
+    #    Con recinto propio se dibujan como figura; el resto, como símbolo.
+    con_recinto = [p for p in planta.puntos if p.poligono]
+    sin_recinto = [p for p in planta.puntos if not p.poligono]
+
+    if con_recinto:
         folium.GeoJson(
-            {
-                "type": "FeatureCollection",
-                "features": [_feature_punto(p) for p in planta.puntos],
-            },
+            {"type": "FeatureCollection", "features": [_feature_punto(p) for p in con_recinto]},
+            style_function=_estilo_destino,
+            highlight_function=_estilo_cursor,
+            tooltip=_tooltip(["nombre"]),
+            name="Referencias",
+        ).add_to(mapa)
+
+    if sin_recinto:
+        folium.GeoJson(
+            {"type": "FeatureCollection", "features": [_feature_punto(p) for p in sin_recinto]},
             marker=folium.CircleMarker(
                 radius=9, color=GRIS_BORDE_DESTINO, weight=2, fill=True,
                 fill_color=BLANCO, fill_opacity=1,
@@ -232,13 +251,14 @@ def construir_mapa_interior(
             },
             highlight_function=_estilo_cursor,
             tooltip=_tooltip(["nombre"]),
-            name="Referencias",
+            name="Referencias sin recinto",
         ).add_to(mapa)
-        for punto in planta.puntos:
-            folium.Marker(
-                location=punto.coord.como_lista(),
-                icon=_simbolo(SIMBOLOS.get(punto.tipo, "•")),
-            ).add_to(mapa)
+
+    for punto in planta.puntos:
+        folium.Marker(
+            location=punto.coord.como_lista(),
+            icon=_simbolo(SIMBOLOS.get(punto.tipo, "•")),
+        ).add_to(mapa)
 
     # 4. Etiquetas encima de todo.
     for destino in dibujables:

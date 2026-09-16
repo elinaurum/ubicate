@@ -142,11 +142,13 @@ class RepositorioCampus:
 
         for p in self._plantas.values():
             for punto in p.puntos:
-                if not (0 <= punto.coord.y <= p.alto_m and 0 <= punto.coord.x <= p.ancho_m):
-                    problemas.append(
-                        f"el punto {punto.nombre!r} de la planta {p.id} cae fuera de ella "
-                        f"({punto.coord.y}, {punto.coord.x}) para {p.alto_m}x{p.ancho_m} m"
-                    )
+                for c in (punto.coord, *(punto.poligono or ())):
+                    if not (0 <= c.y <= p.alto_m and 0 <= c.x <= p.ancho_m):
+                        problemas.append(
+                            f"el punto {punto.nombre!r} de la planta {p.id} cae fuera de ella "
+                            f"({c.y}, {c.x}) para {p.alto_m}x{p.ancho_m} m"
+                        )
+                        break
 
         if problemas:
             raise ErrorDatos(problemas)
