@@ -57,6 +57,39 @@ def test_sala_con_coord_interior_tiene_planta_valida(repo):
     assert 0 <= c.x <= planta.ancho_m
 
 
+def test_la_planta_tiene_tamano_de_edificio_real(repo):
+    """Guardia contra el error de escala del DXF (ACT-010): el piso -1 del 851
+    mide ~100 x 70 m. Si alguien recarga el plano tomando los milímetros que
+    declara su encabezado, el marco queda 10 veces más chico y esto lo caza."""
+    planta = repo.planta_de(repo.destino("B01"))
+    assert 50 <= planta.ancho_m <= 300
+    assert 30 <= planta.alto_m <= 300
+
+
+def test_las_salas_rectangulares_miden_lo_que_una_sala(repo):
+    """Una sala de clases con contorno debe tener un área creíble (20-200 m²)."""
+    for cid in ("B01", "B02", "B03", "B04"):
+        sala = repo.destino(cid).sala
+        assert sala.poligono_interior, f"{cid} debería tener contorno"
+        pts = [(c.x, c.y) for c in sala.poligono_interior]
+        n = len(pts)
+        area = abs(
+            sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1]
+                for i in range(n))
+        ) / 2
+        assert 20 <= area <= 200, f"{cid} tiene {area:.1f} m2"
+
+
+def test_los_puntos_de_referencia_estan_dentro_de_la_planta(repo):
+    planta = repo.planta_de(repo.destino("B01"))
+    assert planta.puntos, "la planta debería traer referencias (baños, ascensores…)"
+    tipos = {p.tipo.value for p in planta.puntos}
+    assert {"bano", "piscina", "ascensor", "escalera"} <= tipos
+    for p in planta.puntos:
+        assert 0 <= p.coord.y <= planta.alto_m
+        assert 0 <= p.coord.x <= planta.ancho_m
+
+
 def test_edificio_no_tiene_planta_interior(repo):
     assert repo.planta_de(repo.destino("850_FIS")) is None
 

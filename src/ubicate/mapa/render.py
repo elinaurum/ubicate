@@ -46,6 +46,16 @@ def plano_data_uri(settings: Settings) -> str:
     return _plano_data_uri(str(archivo), archivo.stat().st_mtime)
 
 
+def _tooltip(texto: str) -> folium.Tooltip:
+    """Tooltip con el texto escapado.
+
+    folium inserta el tooltip tal cual en el HTML. Sin escapar, un nombre de
+    edificio con ``<script>`` en ``data/`` se ejecutaría en el navegador — el
+    popup ya se escapaba, el tooltip no (ver ACT-010).
+    """
+    return folium.Tooltip(html.escape(texto))
+
+
 def _envolver(texto: str, palabras_por_linea: int = 6) -> str:
     """Corta el texto en líneas para que el globo no se desborde a lo ancho."""
     palabras = html.escape(texto or "").split()
@@ -121,7 +131,7 @@ def construir_mapa(
             color=COLOR_ORIGEN,
             fill=True,
             fill_opacity=1,
-            tooltip=f"Partida: {ruta.origen.nombre}",
+            tooltip=_tooltip(f"Partida: {ruta.origen.nombre}"),
             popup=folium.Popup(f"<b>Partida</b><br>{html.escape(ruta.origen.nombre)}", max_width=260),
         ).add_to(capa)
 
@@ -131,7 +141,7 @@ def construir_mapa(
         color=color,
         fill=True,
         fill_opacity=0.92,
-        tooltip=destino.etiqueta,
+        tooltip=_tooltip(destino.etiqueta),
         popup=folium.Popup(_popup_destino(destino), max_width=320),
     ).add_to(capa)
 

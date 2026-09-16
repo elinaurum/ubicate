@@ -127,12 +127,26 @@ class RepositorioCampus:
                     f"para acceso {edificio.acceso.value} piso {sala.piso}"
                 )
                 continue
-            c = sala.coord_interior
-            if not (0 <= c.y <= planta.alto_m and 0 <= c.x <= planta.ancho_m):
+            puntos = [sala.coord_interior, *(sala.poligono_interior or ())]
+            for c in puntos:
+                if not (0 <= c.y <= planta.alto_m and 0 <= c.x <= planta.ancho_m):
+                    problemas.append(
+                        f"la sala {sala.id} tiene un punto fuera de la planta {planta.id} "
+                        f"({c.y}, {c.x}) para {planta.alto_m}x{planta.ancho_m} m"
+                    )
+                    break
+            if sala.poligono_interior and sala.coord_interior is None:
                 problemas.append(
-                    f"la sala {sala.id} tiene coord_interior fuera de la planta {planta.id} "
-                    f"({c.y}, {c.x}) para {planta.alto_m}x{planta.ancho_m} m"
+                    f"la sala {sala.id} tiene poligono_interior pero no coord_interior"
                 )
+
+        for p in self._plantas.values():
+            for punto in p.puntos:
+                if not (0 <= punto.coord.y <= p.alto_m and 0 <= punto.coord.x <= p.ancho_m):
+                    problemas.append(
+                        f"el punto {punto.nombre!r} de la planta {p.id} cae fuera de ella "
+                        f"({punto.coord.y}, {punto.coord.x}) para {p.alto_m}x{p.ancho_m} m"
+                    )
 
         if problemas:
             raise ErrorDatos(problemas)

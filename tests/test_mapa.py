@@ -22,3 +22,15 @@ def test_popup_escapa_contenido_de_los_datos(settings, repo):
     html = mapa_html(settings, sucio, None)
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;" in html
+
+
+def test_tooltip_escapa_contenido_de_los_datos(settings, repo):
+    """El tooltip también se inserta tal cual en el HTML: debe escaparse.
+    Regresión de ACT-010 (el popup ya se escapaba, el tooltip no)."""
+    import dataclasses
+
+    destino = repo.destino("850_FIS")
+    edificio = destino.edificio.model_copy(update={"nombre": "<script>alert(1)</script>"})
+    sucio = dataclasses.replace(destino, edificio=edificio)
+    html = mapa_html(settings, sucio, None)
+    assert "<script>alert(1)</script>" not in html

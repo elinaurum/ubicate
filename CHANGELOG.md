@@ -17,31 +17,57 @@ desplegar.
 
 ## [2.0.0] — 2026-09-15
 
-Vista interior del piso -1 del edificio 851, separada del mapa exterior.
-Nota completa: [ACT-009](docs/actualizaciones/ACT-009-vista-interior-piso-menos1-851.md).
+Vista interior del piso -1 del edificio 851, separada del mapa exterior y
+dibujada como vector.
+Notas: [ACT-009](docs/actualizaciones/ACT-009-vista-interior-piso-menos1-851.md)
+(diseño inicial) y
+[ACT-010](docs/actualizaciones/ACT-010-vista-vectorial-y-escala-del-plano.md)
+(rediseño vectorial y corrección de escala; **corrige medidas publicadas en
+ACT-009**).
 Decisión: [ADR-0009](docs/decisiones/ADR-0009-vista-interior-de-piso.md).
 
 ### Agregado
 
 * **Plano interior del piso -1 (851).** Nueva vista, aparte del mapa exterior,
-  con las 8 salas `B01`–`B08` ubicadas con coordenadas reales extraídas del
-  plano de arquitectura (no aproximadas). Se abre desde un desplegable en la
-  ficha de la sala.
-* `data/plantas.json` y el modelo `PlantaInterior` (`modelos.py`): esquema
-  para los planos interiores por piso.
-* `Sala.coord_interior`: posición de una sala dentro del plano de su piso, en
-  metros, sistema propio de cada planta.
+  dibujada como vector: cada sala es una forma con su etiqueta y cada
+  referencia (baño, piscina, camarín, ascensor, escalera) es un símbolo. Se
+  abre desde un desplegable en la ficha de la sala.
+* **24 referencias del piso** tomadas del rótulo del plano: la piscina, 2
+  camarines, 7 vestíbulos de baño, 4 halls de ascensor y 8 escaleras.
+* **Contorno real de 5 salas** (`B01`–`B04`, 9,80 × 4,70 m cada una, y `B07`).
+  Las hexagonales (`B05`, `B06`, `B08`) se dibujan como punto: el rectángulo
+  no las representa y no se les inventa una forma.
+* `data/plantas.json` y los modelos `PlantaInterior`, `PuntoInteres` y
+  `TipoPunto` (`modelos.py`): esquema de los planos interiores por piso.
+* `Sala.coord_interior` y `Sala.poligono_interior`: posición y contorno de una
+  sala dentro del plano de su piso, en metros, sistema propio de cada planta.
 * `mapa/interior.py`: construcción del mapa interior (mismo patrón que
   `mapa/render.py`, ver ADR-0004), sin importar Streamlit.
-* `scripts/extraer_planta_dxf.py`: herramienta para convertir un plano DXF de
-  arquitectura en la imagen y las coordenadas que usa `plantas.json`. Se corre
-  a mano, una vez por piso; no es dependencia de la aplicación
+* `scripts/extraer_planta_dxf.py`: herramienta para sacar de un plano DXF el
+  marco del piso, el contorno de una sala y sus referencias. Se corre a mano,
+  una vez por piso; no es dependencia de la aplicación
   (`pip install .[planos]`).
+
+### Corregido
+
+* **Escala del plano de arquitectura.** El DXF declara milímetros y está en
+  centímetros: el piso -1 figuraba como 49,65 × 12,70 m cuando mide
+  101,82 × 71,15 m, y las coordenadas de `B01`–`B08` estaban mal. Corregido,
+  con medidas de control en el script y pruebas que lo cazan si reaparece.
+  No alcanzó a desplegarse. Detalle en ACT-010.
+
+### Seguridad
+
+* **Tooltips sin escapar en los mapas.** `folium` inserta el texto del tooltip
+  tal cual: un rótulo con `<script>` en `data/` se ejecutaba en el navegador.
+  Afectaba también a `mapa/render.py`, el mapa exterior ya en producción. Los
+  popups siempre se escaparon; los tooltips no. Corregido en ambos módulos,
+  con prueba de regresión.
 
 ### Cambiado
 
-* `docs/DATOS.md` §6: esquema de `plantas.json` y procedimiento para agregar
-  un piso nuevo.
+* `docs/DATOS.md` §6: esquema de `plantas.json`, aviso sobre la escala del DXF
+  y procedimiento para agregar un piso nuevo.
 
 ### Datos
 

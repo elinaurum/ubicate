@@ -3,10 +3,203 @@
     "id": "851_SUBTE1",
     "acceso": "851",
     "piso": -1,
-    "imagen": "851_piso_-1.png",
-    "ancho_m": 49.65,
-    "alto_m": 12.70,
-    "fuente": "Plano de arquitectura piso -1 (\"007_SUBTE 1_PBP\", planta subterráneo 1), entregado por el equipo. Muros/tabiques/puertas/ascensores extraídos con scripts/extraer_planta_dxf.py. Correspondencia de códigos B01-B08 confirmada en terreno por el equipo (ver docs/DEUDA_DATOS.md D-06).",
+    "ancho_m": 101.82,
+    "alto_m": 71.15,
+    "fuente": "Plano de arquitectura piso -1 (\"007_SUBTE 1_PBP\"), entregado por el equipo. Marco = envolvente de las capas MUROS y TABIQUES. El dibujo está en centímetros pese a que su encabezado declara milímetros (ver ACT-010). Extraído con scripts/extraer_planta_dxf.py.",
+    "puntos": [
+      {
+        "nombre": "HALL ASCENSOR 1",
+        "tipo": "ascensor",
+        "coord": [
+          63.67,
+          36.96
+        ]
+      },
+      {
+        "nombre": "HALL ASCENSOR 2",
+        "tipo": "ascensor",
+        "coord": [
+          61.25,
+          88.24
+        ]
+      },
+      {
+        "nombre": "HALL ASCENSOR 3",
+        "tipo": "ascensor",
+        "coord": [
+          5.55,
+          39.61
+        ]
+      },
+      {
+        "nombre": "HALL ASCENSOR 4",
+        "tipo": "ascensor",
+        "coord": [
+          5.55,
+          88.26
+        ]
+      },
+      {
+        "nombre": "BAÑO DOC.-ADM. 1",
+        "tipo": "bano",
+        "coord": [
+          60.59,
+          34.25
+        ]
+      },
+      {
+        "nombre": "BAÑO DOC.-ADM. 2",
+        "tipo": "bano",
+        "coord": [
+          5.45,
+          34.25
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑO",
+        "tipo": "bano",
+        "coord": [
+          61.47,
+          93.52
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑO ALUMN0S 1",
+        "tipo": "bano",
+        "coord": [
+          46.02,
+          98.64
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑO ALUMN0S 2",
+        "tipo": "bano",
+        "coord": [
+          21.93,
+          98.64
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑO ALUMNAS 1",
+        "tipo": "bano",
+        "coord": [
+          61.47,
+          98.64
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑO ALUMNAS 2",
+        "tipo": "bano",
+        "coord": [
+          5.25,
+          98.64
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑO DOC.ADM. 2",
+        "tipo": "bano",
+        "coord": [
+          5.25,
+          34.35
+        ]
+      },
+      {
+        "nombre": "VESTIBULO BAÑOS",
+        "tipo": "bano",
+        "coord": [
+          5.25,
+          93.56
+        ]
+      },
+      {
+        "nombre": "CAMARIN HOMBRES",
+        "tipo": "camarin",
+        "coord": [
+          42.71,
+          28.74
+        ]
+      },
+      {
+        "nombre": "CAMARIN MUJERES",
+        "tipo": "camarin",
+        "coord": [
+          24.32,
+          28.67
+        ]
+      },
+      {
+        "nombre": "ESCALERA 10",
+        "tipo": "escalera",
+        "coord": [
+          18.63,
+          92.92
+        ]
+      },
+      {
+        "nombre": "ESCALERA 11",
+        "tipo": "escalera",
+        "coord": [
+          48.95,
+          92.92
+        ]
+      },
+      {
+        "nombre": "ESCALERA EMERGENCIA 6",
+        "tipo": "escalera",
+        "coord": [
+          55.87,
+          32.82
+        ]
+      },
+      {
+        "nombre": "ESCALERA EMERGENCIA 7",
+        "tipo": "escalera",
+        "coord": [
+          57.02,
+          94.02
+        ]
+      },
+      {
+        "nombre": "ESCALERA EMERGENCIA 8",
+        "tipo": "escalera",
+        "coord": [
+          10.26,
+          32.8
+        ]
+      },
+      {
+        "nombre": "ESCALERA EMERGENCIA 9",
+        "tipo": "escalera",
+        "coord": [
+          10.32,
+          93.93
+        ]
+      },
+      {
+        "nombre": "ESCALERA ESPIRAL",
+        "tipo": "escalera",
+        "coord": [
+          39.29,
+          58.45
+        ]
+      },
+      {
+        "nombre": "RAMPA + ESCALERA 23",
+        "tipo": "escalera",
+        "coord": [
+          61.52,
+          30.42
+        ]
+      },
+      {
+        "nombre": "PISCINA",
+        "tipo": "piscina",
+        "coord": [
+          34.78,
+          19.15
+        ]
+      }
+    ],
     "activo": true
   }
 ]

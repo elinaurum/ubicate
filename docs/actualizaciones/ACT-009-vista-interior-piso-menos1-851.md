@@ -8,6 +8,14 @@
 | Autor | Claude Code (a pedido de Alexia Roa) |
 | Revisado por | |
 
+> ⚠️ **Corregida por [ACT-010](ACT-010-vista-vectorial-y-escala-del-plano.md).**
+> Las medidas de esta nota están equivocadas: el plano DXF declara milímetros
+> pero está en centímetros, así que el piso figura aquí 10 veces más chico de
+> lo que es (49,65 × 12,70 m cuando mide 101,82 × 71,15 m), y las
+> `coord_interior` que describe fueron recalculadas. La vista tampoco usa ya
+> la imagen del plano CAD: se dibuja como vector. Se conserva esta nota como
+> registro de la decisión inicial.
+
 ## Qué se pidió
 
 El equipo consiguió los planos de arquitectura (DWG) de los 13 pisos del

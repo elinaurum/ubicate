@@ -58,14 +58,20 @@ def main() -> int:
         print(f"[{OK}] plano del campus presente")
 
     for planta in repo.plantas():
-        ruta_img = settings.dir_imagenes_plantas / planta.imagen
-        if not ruta_img.exists():
-            print(f"[{FALLA}] falta la imagen de la planta {planta.id} en {ruta_img}")
-            errores += 1
-        else:
-            print(f"[{OK}] planta {planta.id} (piso {planta.piso}) con imagen presente")
-    if d.plantas:
-        print(f"[{OK}] {d.plantas} planta(s) interior(es) cargada(s)")
+        salas_dibujadas = repo.salas_en_planta(planta)
+        con_forma = sum(1 for s in salas_dibujadas if s.sala.poligono_interior)
+        print(
+            f"[{OK}] planta {planta.id} (piso {planta.piso}): "
+            f"{planta.ancho_m}x{planta.alto_m} m, {len(salas_dibujadas)} salas "
+            f"({con_forma} con contorno), {len(planta.puntos)} referencias"
+        )
+        sin_forma = [s.id for s in salas_dibujadas if not s.sala.poligono_interior]
+        if sin_forma:
+            print(
+                f"[{AVISO}] sin contorno derivable del plano, se dibujan como punto: "
+                f"{', '.join(sorted(sin_forma))}"
+            )
+            avisos += 1
 
     sin_instrucciones = [
         cid

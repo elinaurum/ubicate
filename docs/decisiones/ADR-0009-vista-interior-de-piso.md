@@ -32,21 +32,32 @@ Dos hallazgos del trabajo exploratorio, antes de decidir:
 
 1. **Vista exclusiva por piso**, no una capa más del mapa exterior. Es un
    mapa folium propio (`mapa/interior.py`), con el mismo patrón del ADR-0004
-   (`crs="Simple"`, imagen incrustada en base64, HTML autocontenido y
-   cacheado). Se abre desde un desplegable en la ficha del destino
-   (`panel_mapa.py`) cuando la sala tiene plano interior.
+   (`crs="Simple"`, HTML autocontenido y cacheado). Se abre desde un
+   desplegable en la ficha del destino (`panel_mapa.py`) cuando la sala tiene
+   plano interior.
 2. **Sistema de coordenadas propio de cada piso, en metros**, tal como sale
    del plano de arquitectura — sin intentar calzarlo con el lienzo exterior de
    1500×2756. `Sala.coord_interior` usa ese sistema local; `PlantaInterior`
-   guarda el tamaño real (`ancho_m`, `alto_m`) y la imagen de fondo.
+   guarda el tamaño real del piso (`ancho_m`, `alto_m`) y sus referencias.
 3. **Nuevo archivo `data/plantas.json`** y modelo `PlantaInterior` en
    `modelos.py`. Documentado en `docs/DATOS.md` §6.
-4. **La extracción del DXF es una herramienta aparte**
-   (`scripts/extraer_planta_dxf.py`), con `ezdxf` y `matplotlib` como
-   dependencia opcional (`pip install .[planos]`) — nunca en tiempo de
-   ejecución de la aplicación. Se corre una vez por piso; el resultado (PNG +
-   coordenadas) es lo que se versiona, no el DWG/DXF original (son archivos
-   pesados y no hacen falta después de extraídos).
+4. **Se dibuja como vector, no como imagen del plano CAD.** Cada sala es
+   una forma con su color y etiqueta; cada referencia (baño, ascensor,
+   piscina, escalera, camarín) es un símbolo. El dibujo de arquitectura trae
+   cotas, ductos, pilotes y rótulos de construcción que estorban a quien solo
+   quiere ubicarse, y su paleta es técnica, no de producto.
+5. **Un contorno solo se dibuja si es cierto.** `Sala.poligono_interior` se
+   carga únicamente cuando la sala resulta rectangular de verdad (se comprueba
+   comparando el área realmente encerrada por los muros con la del
+   rectángulo). Si no lo es —las salas hexagonales del piso -1—, la sala se
+   dibuja como punto. Es la regla 3.1 aplicada a la geometría: mejor un punto
+   correcto que una forma inventada.
+6. **La extracción del DXF es una herramienta aparte**
+   (`scripts/extraer_planta_dxf.py`), con `ezdxf` como dependencia opcional
+   (`pip install .[planos]`) — nunca en tiempo de ejecución de la aplicación.
+   Se corre una vez por piso; el resultado (medidas y coordenadas) es lo que
+   se versiona, no el DWG/DXF original (son archivos pesados y no hacen falta
+   después de extraídos).
 
 ## Alternativas consideradas
 
@@ -61,6 +72,11 @@ Dos hallazgos del trabajo exploratorio, antes de decidir:
    Mucho más grande de lo que pide esta entrega. Se prefieren cambios
    acotados: esta vista deja el modelo de datos listo para que el ruteo se
    agregue después sin rehacerlo.
+3. **Incrustar el dibujo del plano como imagen de fondo.** Fue la primera
+   versión y se descartó tras verla: se ve como un plano de obra (colores por
+   capa técnica, cotas, ductos), pesa ~120 KB en base64 por piso, y no deja
+   resaltar una sala ni distinguir un baño de un ascensor. El vector pesa la
+   mitad y se entiende de una mirada.
 
 ## Consecuencias
 
@@ -86,3 +102,10 @@ Dos hallazgos del trabajo exploratorio, antes de decidir:
 - Los DWG/DXF originales no quedan en el repositorio (pesan varios MB cada
   uno). Si hace falta reprocesar un piso con otras capas, hay que volver a
   pedirlos.
+- Tres de las ocho salas del piso -1 (B05, B06, B08) se dibujan como punto y
+  no como forma: son hexagonales y el rectángulo no las representa. Darles su
+  forma real exige trazar el contorno a mano o resolver la reconstrucción de
+  polígonos a partir de muros, que es un problema aparte.
+- El piso se dibuja sobre un rectángulo gris que es la **caja** de los muros,
+  no la silueta real del edificio. Es fondo neutro para ubicar lo demás, no un
+  dato sobre la forma del piso.

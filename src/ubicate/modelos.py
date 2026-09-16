@@ -104,6 +104,18 @@ class Sala(BaseModel):
     # el lienzo exterior: cada piso usa su propio sistema, tal como sale del
     # plano de arquitectura.
     coord_interior: Coordenada | None = None
+    # Contorno de la sala en ese mismo sistema. Solo se carga cuando se pudo
+    # derivar del plano con certeza (ver scripts/extraer_planta_dxf.py): si la
+    # sala no es rectangular, queda en None y se dibuja como punto, en vez de
+    # inventarle una forma aproximada.
+    poligono_interior: tuple[Coordenada, ...] | None = None
+
+    @field_validator("poligono_interior")
+    @classmethod
+    def _poligono_suficiente(cls, v):
+        if v is not None and len(v) < 3:
+            raise ValueError("poligono_interior necesita al menos 3 vértices")
+        return v
 
     @field_validator("id", "edificio_id")
     @classmethod
@@ -127,14 +139,40 @@ class Sala(BaseModel):
         return tuple(dict.fromkeys(a.strip() for a in v if a and a.strip()))
 
 
+class TipoPunto(StrEnum):
+    """Categorías de punto de referencia dentro de un piso."""
+
+    BANO = "bano"
+    PISCINA = "piscina"
+    CAMARIN = "camarin"
+    ASCENSOR = "ascensor"
+    ESCALERA = "escalera"
+
+
+class PuntoInteres(BaseModel):
+    """Referencia dentro de un piso (baño, ascensor, piscina…).
+
+    El nombre es el rótulo textual del plano de arquitectura, no uno
+    inventado: si el plano dice "VESTIBULO BAÑO ALUMNAS 1", eso se guarda.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    nombre: str = Field(min_length=2)
+    tipo: TipoPunto
+    coord: Coordenada
+
+
 class PlantaInterior(BaseModel):
     """Plano interior de un piso, con su propio sistema de coordenadas.
 
     Es la vista exclusiva del piso (ver ADR-0009), separada del mapa exterior:
-    ``ancho_m``/``alto_m`` son el tamaño real del plano en metros, tal como se
+    ``ancho_m``/``alto_m`` son el tamaño real del piso en metros, tal como se
     extrajo del plano de arquitectura (``scripts/extraer_planta_dxf.py``), y
-    las ``coord_interior`` de las salas están expresadas en ese mismo sistema.
-    No se intenta calzar con el lienzo del mapa exterior.
+    tanto ``Sala.coord_interior`` como ``PuntoInteres.coord`` están expresadas
+    en ese mismo sistema. No se intenta calzar con el lienzo del mapa exterior.
+
+    Se dibuja como vector (formas y símbolos), no como imagen del plano CAD.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -142,9 +180,9 @@ class PlantaInterior(BaseModel):
     id: str
     acceso: Acceso
     piso: int
-    imagen: str = Field(min_length=1)
     ancho_m: float = Field(gt=0)
     alto_m: float = Field(gt=0)
+    puntos: tuple[PuntoInteres, ...] = ()
     fuente: str = ""
     activo: bool = True
 
