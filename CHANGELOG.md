@@ -15,6 +15,42 @@ desplegar.
 
 ---
 
+## [2.0.0] — 2026-09-15
+
+Vista interior del piso -1 del edificio 851, separada del mapa exterior.
+Nota completa: [ACT-009](docs/actualizaciones/ACT-009-vista-interior-piso-menos1-851.md).
+Decisión: [ADR-0009](docs/decisiones/ADR-0009-vista-interior-de-piso.md).
+
+### Agregado
+
+* **Plano interior del piso -1 (851).** Nueva vista, aparte del mapa exterior,
+  con las 8 salas `B01`–`B08` ubicadas con coordenadas reales extraídas del
+  plano de arquitectura (no aproximadas). Se abre desde un desplegable en la
+  ficha de la sala.
+* `data/plantas.json` y el modelo `PlantaInterior` (`modelos.py`): esquema
+  para los planos interiores por piso.
+* `Sala.coord_interior`: posición de una sala dentro del plano de su piso, en
+  metros, sistema propio de cada planta.
+* `mapa/interior.py`: construcción del mapa interior (mismo patrón que
+  `mapa/render.py`, ver ADR-0004), sin importar Streamlit.
+* `scripts/extraer_planta_dxf.py`: herramienta para convertir un plano DXF de
+  arquitectura en la imagen y las coordenadas que usa `plantas.json`. Se corre
+  a mano, una vez por piso; no es dependencia de la aplicación
+  (`pip install .[planos]`).
+
+### Cambiado
+
+* `docs/DATOS.md` §6: esquema de `plantas.json` y procedimiento para agregar
+  un piso nuevo.
+
+### Datos
+
+* `docs/DEUDA_DATOS.md` D-06 resuelta para `B01`–`B08` (correspondencia con el
+  plano confirmada en terreno por el equipo); sigue abierta para 2 salas del
+  mismo piso sin código oficial confirmado.
+
+---
+
 ## [1.4.2] — 2026-09-08
 
 Mejora de la calidad de las respuestas del chat.

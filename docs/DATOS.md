@@ -6,6 +6,7 @@ Todo lo que la aplicación sabe vive en `data/`. Nada está escrito en el códig
 data/
 ├── edificios.json    27 edificios, accesos y espacios con coordenada en el plano
 ├── salas.json        33 salas, con piso e instrucciones de acceso
+├── plantas.json       planos interiores por piso (ver §7 y ADR-0009)
 └── kb/               Base de conocimiento en Markdown con metadatos
 ```
 
@@ -56,9 +57,12 @@ data/
 | `piso` | entero | sí | Negativo para subterráneos. **Entero, no texto** |
 | `tipo` | enum | no | `clase`, `auditorio`, `laboratorio`, `estudio` |
 | `instrucciones` | texto | sí | Cómo llegar desde el acceso, en segunda persona |
+| `coord_interior` | `[y, x]` | no | Posición dentro del plano interior del piso, en **metros** (ver §7). Ausente mientras no se levante el dato |
 
-La sala hereda la coordenada de su edificio: el plano es una vista cenital y no
-distingue pisos (limitación M1). La altura se comunica por texto.
+La sala hereda la coordenada de su edificio para el mapa exterior: esa vista
+es cenital y no distingue pisos (limitación M1). La altura se comunica por
+texto, salvo que exista un plano interior del piso (§7), en cuyo caso
+`coord_interior` la ubica de verdad dentro de esa vista aparte.
 
 ## 3. Sistema de coordenadas
 
@@ -151,7 +155,60 @@ dental"), no las de la *pregunta*. La recuperación ignora "dónde", "puedo",
 `VACIAS_TEXTO`): un título como "¿Dónde puedo estudiar?" se busca solo por
 "estudiar".
 
-## 6. Agregar contenido: procedimiento
+## 6. Planos interiores (`data/plantas.json`)
+
+Ver ADR-0009. Es la vista "cómo es este piso por dentro", separada del mapa
+exterior (no calzan sus coordenadas entre sí a propósito).
+
+```json
+{
+  "id": "851_SUBTE1",
+  "acceso": "851",
+  "piso": -1,
+  "imagen": "851_piso_-1.png",
+  "ancho_m": 49.65,
+  "alto_m": 12.70,
+  "fuente": "Plano de arquitectura piso -1 (...), extraído con scripts/extraer_planta_dxf.py",
+  "activo": true
+}
+```
+
+| Campo | Tipo | Obligatorio | Notas |
+|---|---|---|---|
+| `id` | texto | sí | `MAYÚSCULAS_Y_GUION_BAJO`, único |
+| `acceso` | enum | sí | `"850"` o `"851"` — junto con `piso`, identifica el plano |
+| `piso` | entero | sí | Debe existir al menos una sala con ese `piso` para el mismo acceso |
+| `imagen` | texto | sí | Nombre de archivo en `assets/plantas/` (no una ruta completa) |
+| `ancho_m`, `alto_m` | número | sí | Tamaño real del plano en metros, tal como lo imprime `scripts/extraer_planta_dxf.py` |
+| `fuente` | texto | no | De dónde salió el plano y cómo se procesó |
+| `activo` | booleano | no | `false` oculta la planta sin borrarla |
+
+**Sistema de coordenadas:** cada planta tiene el suyo, en metros, origen
+abajo-izquierda (igual convención que el lienzo exterior: `y` crece hacia
+arriba). No hay conversión entre el sistema de una planta y el lienzo
+exterior ni entre plantas de distinto piso — cada una es independiente, salvo
+que, por venir del mismo proyecto CAD, los 13 pisos de 851 comparten el mismo
+origen entre sí (ver ADR-0009), lo que interesa para cuando se agregue ruteo
+entre pisos.
+
+### Agregar un piso nuevo
+
+1. Conseguir el plano en **DXF** (no DWG — ver `scripts/extraer_planta_dxf.py`
+   para cómo exportarlo).
+2. `pip install ezdxf matplotlib` (una vez; no se necesita para correr la
+   aplicación).
+3. `python scripts/extraer_planta_dxf.py plano.dxf --salida assets/plantas/<archivo>.png`
+   — copia el `ancho_m`/`alto_m` que imprime.
+4. Agregar la entrada en `data/plantas.json` con esos valores.
+5. Para cada sala de ese piso: `python scripts/extraer_planta_dxf.py plano.dxf --buscar "<texto del plano>"`
+   para obtener su `coord_interior`. **Antes de escribirlo, confirmar con el
+   equipo que el rótulo del plano corresponde de verdad al código oficial de
+   la sala** (regla 3.1 — no inventar la correspondencia; ver D-06 en
+   `docs/DEUDA_DATOS.md` para un caso real de esto).
+6. `make validar` y `make test`.
+7. Nota de actualización y CHANGELOG.
+
+## 7. Agregar contenido: procedimiento
 
 ### Una sala nueva
 

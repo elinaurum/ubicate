@@ -81,6 +81,49 @@ Requiere autorización institucional antes de cualquier implementación.
 
 ---
 
+## D-06 · Correspondencia entre `B01`–`B08` y las salas del plano de planta -1
+
+**Estado:** parcialmente resuelta (2026-09-15) · **Impacto:** bajo para
+`B01`–`B08` (ya confirmado); alto para las 2 salas que faltan.
+
+El plano de arquitectura del piso -1 (`007_SUBTE 1_PBP.dxf`, ver ADR-0009)
+rotula sus salas de clase como "SALA DE CLASES 01" a "10", en dos pasillos
+distintos (01–04 en uno, 05–10 en otro). Ninguna usa la nomenclatura "B" que sí
+usa `data/salas.json` (`B01`–`B08`), y hay 10 salas dibujadas contra 8
+registradas: no había forma de inferir la correspondencia desde el plano sin
+arriesgar asignar mal una sala.
+
+**Resuelto:** el equipo confirmó en terreno la correspondencia para `B01`–`B08`
+(2026-09-15). Ya está en `data/salas.json` (`coord_interior`) y en
+`data/plantas.json`:
+
+| Código | Rótulo en el plano |
+|---|---|
+| B01 | SALA DE CLASES 04 |
+| B02 | SALA DE CLASES 03 |
+| B03 | SALA DE CLASES 02 |
+| B04 | SALA DE CLASES 01 |
+| B05 | SALA DE CLASES 10 |
+| B06 | SALA DE CLASES 08 |
+| B07 | SALA DE CLASES 07 |
+| B08 | SALA DE CLASES 06 |
+
+**Sigue abierto:** "SALA DE CLASES 05" y "SALA DE CLASES 09" no tienen código
+`B` confirmado. El equipo mencionó "B09" para la 05 (con más confianza) y "B10"
+para la 09 (dicho como intuición propia, explícitamente sin confirmar) — **no
+se cargó ninguna de las dos** porque no cumplen el estándar de esta regla: un
+dato con seguridad a medias se anota, no se escribe. Además, cada una de las 3
+salas con forma de hexágono del plano (incluidas B05–B08) contiene **dos**
+rótulos de "SALA DE CLASES" muy próximos entre sí — falta confirmar si son
+de verdad dos salas separadas (un tabique al medio) o una sola sala con dos
+números.
+
+**Qué hay que hacer:** confirmar en terreno el código oficial de "SALA DE
+CLASES 05" y "09", y si las salas pareadas en cada hexágono son una sala o
+dos. Con eso, agregar las filas que falten a `data/salas.json`.
+
+---
+
 ## Resueltas
 
 | Id | Problema | Resuelto en |

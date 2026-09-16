@@ -120,6 +120,15 @@ class Settings(BaseSettings):
         return self.dir_datos / "salas.json"
 
     @property
+    def ruta_plantas(self) -> Path:
+        return self.dir_datos / "plantas.json"
+
+    @property
+    def dir_imagenes_plantas(self) -> Path:
+        """Imágenes de los planos interiores (ver PlantaInterior.imagen)."""
+        return self.dir_assets / "plantas"
+
+    @property
     def ruta_imagen_mapa(self) -> Path:
         return self.dir_assets / self.mapa_imagen
 

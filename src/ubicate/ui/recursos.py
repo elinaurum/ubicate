@@ -18,6 +18,7 @@ from ubicate.chat.motor import MotorChat
 from ubicate.chat.proveedores import crear_proveedor
 from ubicate.config import Settings, get_settings
 from ubicate.datos.repositorio import RepositorioCampus
+from ubicate.mapa.interior import mapa_interior_html
 from ubicate.mapa.render import mapa_html
 from ubicate.modelos import Destino, Ruta
 from ubicate.observabilidad.metricas import RegistroConsultas
@@ -69,3 +70,18 @@ def mapa_cacheado(destino_id: str | None, origen_id: str | None) -> str:
         return mapa_html(s)
     ruta: Ruta = repo.ruta(destino, origen_id)
     return mapa_html(s, destino, ruta)
+
+
+@st.cache_data(show_spinner=False, ttl=3600, max_entries=64)
+def mapa_interior_cacheado(planta_id: str, resaltar_id: str | None) -> str:
+    """HTML de la vista interior de un piso, memorizado por planta×sala.
+
+    Igual razón que ``mapa_cacheado`` (ver ADR-0004): cada plano de piso
+    también incrusta su imagen en base64.
+    """
+    repo = repositorio()
+    planta = next((p for p in repo.plantas() if p.id == planta_id), None)
+    if planta is None:
+        raise ValueError(f"no existe la planta {planta_id!r}")
+    salas = repo.salas_en_planta(planta)
+    return mapa_interior_html(settings(), planta, salas, resaltar_id)

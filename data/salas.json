@@ -6,6 +6,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "coord_interior": [4.06, 36.93],
     "activo": true
   },
   {
@@ -15,6 +16,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "coord_interior": [4.06, 38.02],
     "activo": true
   },
   {
@@ -24,6 +26,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "coord_interior": [4.06, 39.09],
     "activo": true
   },
   {
@@ -33,6 +36,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1 y sigue la señalética de salas B.",
+    "coord_interior": [4.06, 40.17],
     "activo": true
   },
   {
@@ -42,6 +46,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1; B08 está en el pasillo de salas B.",
+    "coord_interior": [8.83, 36.93],
     "activo": true
   },
   {
@@ -51,6 +56,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1; B07 está en el pasillo de salas B.",
+    "coord_interior": [8.73, 38.35],
     "activo": true
   },
   {
@@ -60,6 +66,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1; B06 está en el pasillo de salas B.",
+    "coord_interior": [8.73, 38.77],
     "activo": true
   },
   {
@@ -69,6 +76,7 @@
     "tipo": "clase",
     "aliases": [],
     "instrucciones": "Entra por Beauchef 851, baja al piso -1; B05 está en el pasillo de salas B.",
+    "coord_interior": [8.73, 40.18],
     "activo": true
   },
   {

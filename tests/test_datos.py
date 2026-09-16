@@ -43,3 +43,31 @@ def test_origen_de_ruta_por_sector(repo):
 def test_origen_manual_tiene_prioridad(repo):
     b04 = repo.destino("B04")
     assert repo.origen_para(b04, "ACCESO_850").id == "ACCESO_850"
+
+
+def test_sala_con_coord_interior_tiene_planta_valida(repo):
+    """Ver ADR-0009: toda coord_interior debe caer dentro de su planta."""
+    b01 = repo.destino("B01")
+    planta = repo.planta_de(b01)
+    assert planta is not None
+    assert planta.piso == -1
+    c = b01.sala.coord_interior
+    assert c is not None
+    assert 0 <= c.y <= planta.alto_m
+    assert 0 <= c.x <= planta.ancho_m
+
+
+def test_edificio_no_tiene_planta_interior(repo):
+    assert repo.planta_de(repo.destino("850_FIS")) is None
+
+
+def test_sala_sin_planta_levantada_no_falla(repo):
+    """F21 (piso 2, sector 850) no tiene plano interior todavía: debe dar None,
+    no reventar."""
+    assert repo.planta_de(repo.destino("F21")) is None
+
+
+def test_salas_en_planta_incluye_las_ocho_confirmadas(repo):
+    planta = repo.planta_de(repo.destino("B01"))
+    ids = {d.id for d in repo.salas_en_planta(planta)}
+    assert ids == {"B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08"}

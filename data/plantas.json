@@ -1,0 +1,12 @@
+[
+  {
+    "id": "851_SUBTE1",
+    "acceso": "851",
+    "piso": -1,
+    "imagen": "851_piso_-1.png",
+    "ancho_m": 49.65,
+    "alto_m": 12.70,
+    "fuente": "Plano de arquitectura piso -1 (\"007_SUBTE 1_PBP\", planta subterráneo 1), entregado por el equipo. Muros/tabiques/puertas/ascensores extraídos con scripts/extraer_planta_dxf.py. Correspondencia de códigos B01-B08 confirmada en terreno por el equipo (ver docs/DEUDA_DATOS.md D-06).",
+    "activo": true
+  }
+]

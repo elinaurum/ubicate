@@ -57,6 +57,16 @@ def main() -> int:
     else:
         print(f"[{OK}] plano del campus presente")
 
+    for planta in repo.plantas():
+        ruta_img = settings.dir_imagenes_plantas / planta.imagen
+        if not ruta_img.exists():
+            print(f"[{FALLA}] falta la imagen de la planta {planta.id} en {ruta_img}")
+            errores += 1
+        else:
+            print(f"[{OK}] planta {planta.id} (piso {planta.piso}) con imagen presente")
+    if d.plantas:
+        print(f"[{OK}] {d.plantas} planta(s) interior(es) cargada(s)")
+
     sin_instrucciones = [
         cid
         for cid, _ in repo.catalogo_mapeable()

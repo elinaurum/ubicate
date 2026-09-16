@@ -98,6 +98,12 @@ class Sala(BaseModel):
     aliases: tuple[str, ...] = ()
     instrucciones: str = Field(min_length=5)
     activo: bool = True
+    # Posición dentro del plano interior del piso (PlantaInterior), en metros,
+    # con el mismo origen abajo-izquierda que Coordenada. None mientras no se
+    # levante el dato (ver docs/DATOS.md §6 y ROADMAP §7). No tiene relación con
+    # el lienzo exterior: cada piso usa su propio sistema, tal como sale del
+    # plano de arquitectura.
+    coord_interior: Coordenada | None = None
 
     @field_validator("id", "edificio_id")
     @classmethod
@@ -119,6 +125,35 @@ class Sala(BaseModel):
     @classmethod
     def _aliases_limpios(cls, v: tuple[str, ...]) -> tuple[str, ...]:
         return tuple(dict.fromkeys(a.strip() for a in v if a and a.strip()))
+
+
+class PlantaInterior(BaseModel):
+    """Plano interior de un piso, con su propio sistema de coordenadas.
+
+    Es la vista exclusiva del piso (ver ADR-0009), separada del mapa exterior:
+    ``ancho_m``/``alto_m`` son el tamaño real del plano en metros, tal como se
+    extrajo del plano de arquitectura (``scripts/extraer_planta_dxf.py``), y
+    las ``coord_interior`` de las salas están expresadas en ese mismo sistema.
+    No se intenta calzar con el lienzo del mapa exterior.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    acceso: Acceso
+    piso: int
+    imagen: str = Field(min_length=1)
+    ancho_m: float = Field(gt=0)
+    alto_m: float = Field(gt=0)
+    fuente: str = ""
+    activo: bool = True
+
+    @field_validator("id")
+    @classmethod
+    def _id_valido(cls, v: str) -> str:
+        if not RE_ID.match(v):
+            raise ValueError(f"id de planta inválido: {v!r} (usa MAYÚSCULAS_Y_GUION_BAJO)")
+        return v
 
 
 class Categoria(StrEnum):

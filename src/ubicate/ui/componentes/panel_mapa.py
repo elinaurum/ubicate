@@ -110,6 +110,20 @@ def render() -> None:
             st.caption(f"Partiendo desde {ruta.origen.nombre}")
             st.write(destino.detalle)
 
+        # --- Plano interior del piso, si ya se levantó (ver ADR-0009) ------
+        planta = repo.planta_de(destino)
+        if planta is not None:
+            with st.expander(f"🏢 Ver el interior del piso {planta.piso}"):
+                resaltar_id = destino.id if destino.sala is not None else None
+                html_interior = recursos.mapa_interior_cacheado(planta.id, resaltar_id)
+                components.html(
+                    html_interior, height=recursos.settings().mapa_alto_px, scrolling=False
+                )
+                st.caption(
+                    "Plano propio de este piso, en su escala real — no es la misma vista "
+                    "cenital del mapa exterior."
+                )
+
     # --- Plano -------------------------------------------------------------
     html = recursos.mapa_cacheado(estado.destino_id(), estado.origen_id())
     components.html(html, height=recursos.settings().mapa_alto_px, scrolling=False)

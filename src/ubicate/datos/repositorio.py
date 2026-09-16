@@ -15,7 +15,16 @@ from pydantic import ValidationError
 
 from ubicate.busqueda.buscador import Conflicto, Indice, Resultado
 from ubicate.config import Settings
-from ubicate.modelos import Acceso, Categoria, Coordenada, Destino, Edificio, Ruta, Sala
+from ubicate.modelos import (
+    Acceso,
+    Categoria,
+    Coordenada,
+    Destino,
+    Edificio,
+    PlantaInterior,
+    Ruta,
+    Sala,
+)
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +45,7 @@ class Diagnostico:
 
     edificios: int
     salas: int
+    plantas: int
     conflictos: tuple[Conflicto, ...]
     advertencias: tuple[str, ...]
 
@@ -45,11 +55,16 @@ class RepositorioCampus:
         self,
         edificios: list[Edificio],
         salas: list[Sala],
+        plantas: list[PlantaInterior],
         settings: Settings,
     ) -> None:
         self._settings = settings
         self._edificios: dict[str, Edificio] = {e.id: e for e in edificios if e.activo}
         self._salas: dict[str, Sala] = {s.id: s for s in salas if s.activo}
+        self._plantas: dict[str, PlantaInterior] = {p.id: p for p in plantas if p.activo}
+        self._plantas_por_piso: dict[tuple[Acceso, int], PlantaInterior] = {
+            (p.acceso, p.piso): p for p in self._plantas.values()
+        }
         self._advertencias: list[str] = []
 
         self._validar_referencias()
@@ -64,7 +79,8 @@ class RepositorioCampus:
     def desde_archivos(cls, settings: Settings) -> RepositorioCampus:
         edificios = _cargar(settings.ruta_edificios, Edificio, "edificio")
         salas = _cargar(settings.ruta_salas, Sala, "sala")
-        return cls(edificios, salas, settings)
+        plantas = _cargar(settings.ruta_plantas, PlantaInterior, "planta")
+        return cls(edificios, salas, plantas, settings)
 
     # ----------------------------------------------------------- validaciones
     def _validar_referencias(self) -> None:
@@ -86,6 +102,36 @@ class RepositorioCampus:
                 problemas.append(
                     f"{e.id} tiene coordenada fuera del lienzo "
                     f"({e.coord.y}, {e.coord.x}) para {alto}x{ancho}"
+                )
+
+        vistas: set[tuple[Acceso, int]] = set()
+        for p in self._plantas.values():
+            clave = (p.acceso, p.piso)
+            if clave in vistas:
+                problemas.append(
+                    f"la planta {p.id} repite acceso {p.acceso.value} + piso {p.piso}, "
+                    "ya cubierto por otra planta"
+                )
+            vistas.add(clave)
+
+        for sala in self._salas.values():
+            if sala.coord_interior is None:
+                continue
+            edificio = self._edificios.get(sala.edificio_id)
+            if edificio is None:
+                continue  # ya se reportó arriba
+            planta = self._plantas_por_piso.get((edificio.acceso, sala.piso))
+            if planta is None:
+                problemas.append(
+                    f"la sala {sala.id} tiene coord_interior pero no existe una planta "
+                    f"para acceso {edificio.acceso.value} piso {sala.piso}"
+                )
+                continue
+            c = sala.coord_interior
+            if not (0 <= c.y <= planta.alto_m and 0 <= c.x <= planta.ancho_m):
+                problemas.append(
+                    f"la sala {sala.id} tiene coord_interior fuera de la planta {planta.id} "
+                    f"({c.y}, {c.x}) para {planta.alto_m}x{planta.ancho_m} m"
                 )
 
         if problemas:
@@ -160,6 +206,27 @@ class RepositorioCampus:
             key=lambda s: (s.piso, s.id),
         )
 
+    def planta_de(self, destino: Destino) -> PlantaInterior | None:
+        """Plano interior del piso del destino, si existe (ver ADR-0009).
+
+        None para un edificio (no tiene piso) o para una sala cuyo piso todavía
+        no tiene plano levantado.
+        """
+        if destino.piso is None:
+            return None
+        return self._plantas_por_piso.get((destino.acceso, destino.piso))
+
+    def salas_en_planta(self, planta: PlantaInterior) -> list[Destino]:
+        """Destinos-sala con posición dentro de ``planta``, para dibujarlos."""
+        return [
+            d
+            for d in self._destinos.values()
+            if d.sala is not None
+            and d.sala.coord_interior is not None
+            and d.acceso == planta.acceso
+            and d.piso == planta.piso
+        ]
+
     def catalogo_mapeable(self) -> list[tuple[str, str]]:
         """(id, etiqueta) de todo lo localizable. Lo usa el prompt del chat."""
         return sorted(
@@ -172,9 +239,13 @@ class RepositorioCampus:
         return Diagnostico(
             edificios=len(self._edificios),
             salas=len(self._salas),
+            plantas=len(self._plantas),
             conflictos=tuple(self._indice.conflictos),
             advertencias=tuple(self._advertencias),
         )
+
+    def plantas(self) -> list[PlantaInterior]:
+        return list(self._plantas.values())
 
 
 def _cargar(ruta: Path, modelo, etiqueta: str) -> list:
