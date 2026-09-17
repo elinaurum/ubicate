@@ -10,7 +10,13 @@ import streamlit as st
 from ubicate.acceso import Rol
 from ubicate.datos.repositorio import ErrorDatos
 from ubicate.ui import estado, recursos, tema
-from ubicate.ui.componentes import barra_lateral, panel_chat, panel_mapa, pantalla_acceso
+from ubicate.ui.componentes import (
+    barra_lateral,
+    panel_chat,
+    panel_mapa,
+    pantalla_acceso,
+    pantalla_carga,
+)
 
 
 def main() -> None:
@@ -25,12 +31,21 @@ def main() -> None:
 
     estado.inicializar()
 
+    # Portada, una vez por visita, antes de pedir la clave (maqueta, lámina 2).
+    # No corta la pasada: se borra sola y sigue lo que venga abajo.
+    if not estado.portada_vista():
+        pantalla_carga.portada()
+
     # Puerta de acceso (ADR-0010). Va antes de cargar nada: quien no entró no
     # ve la aplicación ni sus posibles errores de datos. No es autenticación,
     # es una clave compartida mientras no haya cuentas.
     if recursos.settings().acceso_activo and estado.rol() is None:
         pantalla_acceso.render()
         return
+
+    # Bienvenida, apenas se entra (maqueta, lámina 6).
+    if not estado.bienvenida_vista():
+        pantalla_carga.bienvenida()
     if not recursos.settings().acceso_activo and estado.rol() is None:
         estado.fijar_rol(Rol.USUARIO)
 

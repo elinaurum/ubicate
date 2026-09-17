@@ -133,25 +133,44 @@ def render() -> None:
             st.caption(f"Partiendo desde {ruta.origen.nombre}")
             st.write(destino.detalle)
 
-        # --- Plano interior del piso, si ya se levantó (ver ADR-0009) ------
-        # Solo en la versión en desarrollo: en la estable se muestra el mapa
-        # del campus y nada más (ADR-0010).
-        planta = repo.planta_de(destino) if estado.modo_desarrollo() else None
-        if planta is not None:
-            with st.expander(f"🏢 Ver el interior del piso {planta.piso}"):
-                resaltar_id = destino.id if destino.sala is not None else None
-                html_interior = recursos.mapa_interior_cacheado(planta.id, resaltar_id)
-                components.html(
-                    html_interior, height=recursos.settings().mapa_alto_px, scrolling=False
-                )
-                st.caption(
-                    "Plano propio de este piso, en su escala real — no es la misma vista "
-                    "cenital del mapa exterior."
-                )
+    _plano(repo, destino)
 
-    # --- Plano -------------------------------------------------------------
-    html = recursos.mapa_cacheado(estado.destino_id(), estado.origen_id())
-    components.html(html, height=recursos.settings().mapa_alto_px, scrolling=False)
+
+def _plano(repo, destino) -> None:
+    """El plano que corresponda según la versión (ADR-0010).
+
+    En desarrollo se ve **solo** el plano interior, que es lo que se está
+    construyendo; en la estable, solo el mapa del campus. Nunca los dos: tener
+    dos mapas encima obliga a preguntarse cuál mira uno.
+    """
+    alto = recursos.settings().mapa_alto_px
+
+    if estado.modo_desarrollo():
+        planta = repo.planta_de(destino) if destino is not None else None
+        if planta is None:
+            st.info(
+                "Versión en desarrollo: acá solo se muestra el plano interior, y por "
+                "ahora el único levantado es el piso -1 del edificio 851. Busca una "
+                "sala de ese piso (B01 a B09) para verlo."
+            )
+            return
+        resaltar_id = destino.id if destino.sala is not None else None
+        components.html(
+            recursos.mapa_interior_cacheado(planta.id, resaltar_id),
+            height=alto,
+            scrolling=False,
+        )
+        st.caption(
+            f"Piso {planta.piso} del edificio 851, en su escala real "
+            f"({planta.ancho_m} × {planta.alto_m} m). Pasa el cursor por una sala."
+        )
+        return
+
+    components.html(
+        recursos.mapa_cacheado(estado.destino_id(), estado.origen_id()),
+        height=alto,
+        scrolling=False,
+    )
     st.caption(
         "El plano es una vista cenital: la altura (piso, torre) se indica en el texto. "
         "Ver limitación M1 en la documentación."

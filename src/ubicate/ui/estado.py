@@ -28,6 +28,8 @@ class Claves:
     CONTADOR = "ub_contador_mensajes"
     VISTA = "ub_vista"
     ROL = "ub_rol"
+    PORTADA = "ub_portada_vista"
+    BIENVENIDA = "ub_bienvenida_vista"
 
 
 # Vistas de la interfaz. En un teléfono no caben el chat y el mapa a la vez, así
@@ -54,6 +56,8 @@ def inicializar() -> None:
     # la mascota (ADR-0011).
     st.session_state.setdefault(Claves.VISTA, VISTA_MAPA)
     st.session_state.setdefault(Claves.ROL, None)
+    st.session_state.setdefault(Claves.PORTADA, False)
+    st.session_state.setdefault(Claves.BIENVENIDA, False)
 
 
 def id_sesion() -> str:
@@ -81,6 +85,22 @@ def fijar_rol(valor: Rol | None) -> None:
     st.session_state[Claves.ROL] = valor
 
 
+def portada_vista() -> bool:
+    return st.session_state.get(Claves.PORTADA, False)
+
+
+def marcar_portada_vista() -> None:
+    st.session_state[Claves.PORTADA] = True
+
+
+def bienvenida_vista() -> bool:
+    return st.session_state.get(Claves.BIENVENIDA, False)
+
+
+def marcar_bienvenida_vista() -> None:
+    st.session_state[Claves.BIENVENIDA] = True
+
+
 def modo_desarrollo() -> bool:
     """Si se ve la versión en obra (mapa interior del piso) o la estable."""
     return st.session_state.get(Claves.ROL) is Rol.DESARROLLO
@@ -89,6 +109,7 @@ def modo_desarrollo() -> bool:
 def salir() -> None:
     """Cierra la sesión: se vuelve a la pantalla de acceso, sin historial."""
     st.session_state[Claves.ROL] = None
+    st.session_state[Claves.BIENVENIDA] = False
     limpiar_conversacion()
     limpiar()
     st.session_state[Claves.VISTA] = VISTA_MAPA

@@ -15,6 +15,41 @@ desplegar.
 
 ---
 
+## [2.4.0] — 2026-09-17
+
+Legibilidad del chat, pantallas de carga y un solo mapa por versión.
+Nota completa: [ACT-015](docs/actualizaciones/ACT-015-legibilidad-pantallas-de-carga-y-vista-de-desarrollo.md).
+
+### Corregido
+
+* **El texto del chat no se leía.** Salía azul oscuro sobre azul: **1,9:1** de
+  contraste. La regla de las tarjetas blancas le ganaba a la de la burbuja.
+  Además la burbuja pasa de `#7391B5` a `#3F5C86`: el azul de la maqueta deja
+  el texto blanco en 3,3:1, bajo el mínimo accesible; el nuevo llega a
+  **6,8:1**. Medido en el navegador, no estimado.
+* **Enlaces ilegibles** dentro de las respuestas (celeste sobre azul) y el
+  desplegable "De dónde saqué esto", que quedaba oscuro sobre oscuro.
+* **El botón del chat parecía un mensaje**: misma forma que una burbuja. Ahora
+  tiene texto centrado y relieve que se hunde al pulsarlo.
+* **El ícono de quien pregunta** se veía como un cuadro oscuro. Ahora es una
+  silueta blanca.
+
+### Cambiado
+
+* **Un solo mapa por versión.** En desarrollo se ve solo el plano interior —lo
+  que se está construyendo—; en la estable, solo el mapa del campus. Antes el
+  plano interior colgaba de un desplegable bajo el otro mapa.
+
+### Agregado
+
+* **Portada** ("U-BÍCATE") antes de pedir la clave y **bienvenida** (con la
+  mascota) al entrar, una vez por sesión. Son una capa que se desvanece sola:
+  no bloquean la sesión y la aplicación carga por detrás.
+* **La mascota** ya está en `assets/`: la cara como avatar del asistente y en
+  el botón del chat, el cuerpo entero en la bienvenida.
+
+---
+
 ## [2.3.0] — 2026-09-17
 
 La navegación de la maqueta, sugerencias al escribir y la mascota.

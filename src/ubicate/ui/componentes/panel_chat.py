@@ -8,13 +8,11 @@ from ubicate.chat.motor import Conversacion
 from ubicate.chat.prompts import SALUDO
 from ubicate.ui import estado, recursos, tema
 
-AVATAR_USUARIO = "🧑‍🎓"
-
 
 def _avatar(rol: str) -> str:
     """El asistente usa la mascota; si no está el archivo, un emoji."""
     if rol == "user":
-        return AVATAR_USUARIO
+        return tema.avatar_usuario()
     return tema.avatar_asistente(recursos.settings().dir_assets)
 
 
