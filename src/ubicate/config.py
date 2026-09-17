@@ -74,6 +74,17 @@ class Settings(BaseSettings):
     mapa_imagen: str = "mapa_beauchef.png"
     mapa_alto_px: int = 620
 
+    # --- Acceso -----------------------------------------------------------
+    # Puerta temporal mientras no hay cuentas (ver ADR-0010 y ubicate/acceso.py).
+    # NO es autenticación: es una clave compartida que decide qué vista se
+    # muestra. Los valores por defecto están en el repositorio a propósito,
+    # para que la aplicación funcione recién clonada; en cualquier despliegue
+    # expuesto hay que reemplazarlos con UBICATE_CLAVE_USUARIO y
+    # UBICATE_CLAVE_DESARROLLO (ver docs/DESPLIEGUE.md §5).
+    acceso_activo: bool = True
+    clave_usuario: str = "user"
+    clave_desarrollo: str = "developer"
+
     # --- Búsqueda ---------------------------------------------------------
     umbral_difuso: float = Field(default=0.72, ge=0.0, le=1.0)
     max_sugerencias: int = Field(default=5, ge=1, le=20)

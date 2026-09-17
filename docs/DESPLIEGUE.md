@@ -106,6 +106,8 @@ Si una clave se filtra: rotarla primero, investigar después.
 - [ ] Versiones fijadas (`requirements.lock`)
 - [ ] `.env` de producción con `UBICATE_ENTORNO=produccion` y `UBICATE_LOG_FORMATO=json`
 - [ ] API key inyectada como secreto, no en la imagen
+- [ ] `UBICATE_CLAVE_USUARIO` y `UBICATE_CLAVE_DESARROLLO` cambiadas: las
+      del repositorio son públicas (ver ADR-0010)
 - [ ] HTTPS y WebSockets verificados
 - [ ] Healthcheck respondiendo
 - [ ] Volumen persistente para `/app/var`
@@ -174,6 +176,8 @@ mientras se decide la infraestructura definitiva.
 - [ ] `.env` **no** aparece en los cambios de GitHub Desktop (lleva la key)
 - [ ] `requirements.txt` incluye `openai` (lo necesita el cliente de Gemini)
 - [ ] Secrets cargados en Streamlit Cloud, no en el repositorio
+- [ ] Claves de acceso cambiadas (`UBICATE_CLAVE_USUARIO`,
+      `UBICATE_CLAVE_DESARROLLO`): las del repositorio son públicas
 - [ ] `UBICATE_ENTORNO = "produccion"` (si no, la interfaz muestra detalles
       técnicos de error al usuario)
 - [ ] Prueba de humo: buscar `B04`, preguntar "dónde almuerzo", tocar el botón

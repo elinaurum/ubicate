@@ -13,6 +13,7 @@ from dataclasses import dataclass
 
 import streamlit as st
 
+from ubicate.acceso import Rol
 from ubicate.chat.motor import Conversacion
 from ubicate.config import Settings
 
@@ -26,6 +27,7 @@ class Claves:
     ULTIMO_MENSAJE = "ub_ultimo_mensaje_ts"
     CONTADOR = "ub_contador_mensajes"
     VISTA = "ub_vista"
+    ROL = "ub_rol"
 
 
 # Vistas de la interfaz. En un teléfono no caben el chat y el mapa a la vez, así
@@ -49,6 +51,7 @@ def inicializar() -> None:
     st.session_state.setdefault(Claves.ULTIMO_MENSAJE, 0.0)
     st.session_state.setdefault(Claves.CONTADOR, 0)
     st.session_state.setdefault(Claves.VISTA, VISTA_CHAT)
+    st.session_state.setdefault(Claves.ROL, None)
 
 
 def id_sesion() -> str:
@@ -65,6 +68,28 @@ def destino_id() -> str | None:
 
 def origen_id() -> str | None:
     return st.session_state[Claves.ORIGEN]
+
+
+def rol() -> Rol | None:
+    """Rol con el que se entró, o None si todavía no se ha entrado."""
+    return st.session_state.get(Claves.ROL)
+
+
+def fijar_rol(valor: Rol | None) -> None:
+    st.session_state[Claves.ROL] = valor
+
+
+def modo_desarrollo() -> bool:
+    """Si se ve la versión en obra (mapa interior del piso) o la estable."""
+    return st.session_state.get(Claves.ROL) is Rol.DESARROLLO
+
+
+def salir() -> None:
+    """Cierra la sesión: se vuelve a la pantalla de acceso, sin historial."""
+    st.session_state[Claves.ROL] = None
+    limpiar_conversacion()
+    limpiar()
+    st.session_state[Claves.VISTA] = VISTA_CHAT
 
 
 def vista() -> str:

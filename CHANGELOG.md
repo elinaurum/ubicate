@@ -15,6 +15,37 @@ desplegar.
 
 ---
 
+## [2.1.0] — 2026-09-17
+
+Pantalla de acceso con clave compartida, mientras no hay cuentas.
+Nota completa: [ACT-012](docs/actualizaciones/ACT-012-pantalla-de-acceso.md).
+Decisión: [ADR-0010](docs/decisiones/ADR-0010-puerta-de-acceso-sin-cuentas.md).
+
+### Agregado
+
+* **Pantalla de acceso.** La aplicación ya no se abre sin clave. El diseño
+  sigue la maqueta del equipo: fondo azul noche, chincheta con la U, campos
+  blancos redondeados y botón rojo.
+* **Dos versiones según la clave.** `user` muestra la aplicación estable;
+  `developer` muestra además el plano interior del piso, que está en obra.
+  La barra lateral dice cuál se está viendo y permite salir.
+* `ubicate/acceso.py`: `Rol` y `rol_para()`, fuera de `ui/` para probarse sin
+  Streamlit. Comparación en tiempo constante.
+* `UBICATE_CLAVE_USUARIO`, `UBICATE_CLAVE_DESARROLLO` y
+  `UBICATE_ACCESO_ACTIVO` en la configuración.
+
+### Seguridad
+
+* **La puerta no es autenticación y no debe confundirse con una.** La clave
+  por defecto está en el repositorio, una clave compartida no se revoca por
+  persona y no hay límite de intentos. **En cualquier despliegue expuesto hay
+  que reemplazar las claves por entorno** (`docs/DESPLIEGUE.md` §5). Detrás de
+  la puerta no hay datos personales: es un portón, no una caja fuerte.
+* No se registra ningún intento de acceso ni el correo que se escriba, para no
+  romper lo que promete `docs/PRIVACIDAD.md`.
+
+---
+
 ## [2.0.0] — 2026-09-15
 
 Vista interior del piso -1 del edificio 851, separada del mapa exterior y

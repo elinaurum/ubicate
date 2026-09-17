@@ -111,7 +111,9 @@ def render() -> None:
             st.write(destino.detalle)
 
         # --- Plano interior del piso, si ya se levantó (ver ADR-0009) ------
-        planta = repo.planta_de(destino)
+        # Solo en la versión en desarrollo: en la estable se muestra el mapa
+        # del campus y nada más (ADR-0010).
+        planta = repo.planta_de(destino) if estado.modo_desarrollo() else None
         if planta is not None:
             with st.expander(f"🏢 Ver el interior del piso {planta.piso}"):
                 resaltar_id = destino.id if destino.sala is not None else None

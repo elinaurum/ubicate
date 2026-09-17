@@ -20,10 +20,18 @@ def render() -> None:
         # es parte del flujo de la ruta, no un ajuste de sistema, y en el
         # teléfono la barra lateral queda escondida tras el menú.
 
+        rol = estado.rol()
+        if rol is not None:
+            st.caption(f"Estás viendo: **{rol.etiqueta}**")
+
         st.divider()
         if st.button("Reiniciar conversación", use_container_width=True):
             estado.limpiar_conversacion()
             estado.limpiar()
+            st.rerun()
+
+        if settings.acceso_activo and st.button("Salir", use_container_width=True):
+            estado.salir()
             st.rerun()
 
         st.divider()

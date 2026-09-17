@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ubicate.acceso import Rol
 from ubicate.datos.repositorio import ErrorDatos
 from ubicate.ui import estado, recursos
-from ubicate.ui.componentes import barra_lateral, panel_chat, panel_mapa
+from ubicate.ui.componentes import barra_lateral, panel_chat, panel_mapa, pantalla_acceso
 
 _ETIQUETA_VISTA = {estado.VISTA_CHAT: "💬 Preguntar", estado.VISTA_MAPA: "🗺️ Mapa"}
 
@@ -24,6 +25,17 @@ def main() -> None:
         initial_sidebar_state="collapsed",
     )
 
+    estado.inicializar()
+
+    # Puerta de acceso (ADR-0010). Va antes de cargar nada: quien no entró no
+    # ve la aplicación ni sus posibles errores de datos. No es autenticación,
+    # es una clave compartida mientras no haya cuentas.
+    if recursos.settings().acceso_activo and estado.rol() is None:
+        pantalla_acceso.render()
+        return
+    if not recursos.settings().acceso_activo and estado.rol() is None:
+        estado.fijar_rol(Rol.USUARIO)
+
     try:
         recursos.repositorio()
     except ErrorDatos as exc:
@@ -35,7 +47,6 @@ def main() -> None:
         st.error(str(exc))
         st.stop()
 
-    estado.inicializar()
     barra_lateral.render()
 
     st.title("U-bícate")
