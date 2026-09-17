@@ -147,7 +147,13 @@ def test_sin_api_key_cae_a_eco():
 
 
 def test_eco_es_el_valor_por_defecto():
-    assert isinstance(crear_proveedor(Settings()), ProveedorEco)
+    """Sin configuración, la aplicación funciona igual: cae a modo eco.
+
+    `_env_file=None` a propósito: `Settings()` a secas lee el `.env` de quien
+    corre las pruebas, así que en una máquina con API key configurada esta
+    prueba fallaba sin que hubiera nada roto (ACT-016).
+    """
+    assert isinstance(crear_proveedor(Settings(_env_file=None)), ProveedorEco)
 
 
 def test_gemini_y_groq_traen_su_endpoint():

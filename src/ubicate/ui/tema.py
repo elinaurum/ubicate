@@ -225,39 +225,6 @@ CSS = f"""
   /* Volver al mapa: un enlace, no un botón que compita con el resto. */
   [data-testid="stBaseButton-secondary"]:has(p:first-child) {{ font-weight: 700; }}
 
-  /* Pantallas de carga (portada y bienvenida).
-
-     Van como capa fija encima de todo y se desvanecen solas con una
-     animación. No se usa `time.sleep`: bloquearía la sesión y, peor, dejaría
-     la pantalla anterior asomándose en gris por debajo durante la espera
-     (Streamlit mantiene a la vista lo de la pasada anterior hasta que la nueva
-     termina). Así la aplicación carga por detrás mientras se ve la portada. */
-  .ub-carga {{
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: {NAVY};
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      text-align: center;
-      animation: ub-desvanecer 1.9s ease-in forwards;
-  }}
-  @keyframes ub-desvanecer {{
-      0%, 62% {{ opacity: 1; }}
-      100% {{ opacity: 0; visibility: hidden; pointer-events: none; }}
-  }}
-  .ub-carga-titulo {{
-      color: {BLANCO};
-      font-weight: 800;
-      letter-spacing: .12em;
-      font-size: 1.7rem;
-  }}
-  .ub-carga-titulo span {{ color: {ROJO}; }}
-  .ub-carga img {{ width: 190px; height: auto; }}
-
   /* Cabecera de la aplicación. */
   .ub-cabecera {{
       display: flex;
@@ -349,10 +316,61 @@ def css_mascota(dir_assets: Path) -> str:
     )
 
 
+# El estilo de la pantalla de carga viaja con ella y no dentro de `CSS`: la
+# pantalla de acceso inyecta su propio CSS, así que si estas reglas vivieran
+# solo en `CSS` la portada se dibujaría sin estilo encima del formulario
+# (fue exactamente lo que pasó; ver ACT-016).
+#
+# Cada pantalla trae además su **propio nombre de animación**. Streamlit
+# reutiliza el mismo nodo del DOM para los dos `st.markdown`, y con el mismo
+# nombre el navegador da la animación por consumida: la bienvenida aparecía
+# ya desvanecida, invisible.
+def _css_carga(nombre: str) -> str:
+    return f"""
+<style>
+  .ub-carga {{
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: {NAVY};
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+  }}
+  .ub-carga-{nombre} {{ animation: ub-fuera-{nombre} 2s ease-in forwards; }}
+  .ub-carga-titulo {{
+      color: {BLANCO};
+      font-weight: 800;
+      letter-spacing: .12em;
+      font-size: 1.7rem;
+  }}
+  .ub-carga-titulo span {{ color: {ROJO}; }}
+  .ub-carga img {{ width: 190px; height: auto; }}
+  /* La barra lateral y la cabecera se pintan por encima de la capa, así que
+     se les pide aparecer junto con el resto en vez de asomarse durante la
+     espera. */
+  [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"],
+  [data-testid="stHeader"] {{ animation: ub-dentro-{nombre} 2s ease-in forwards; }}
+  @keyframes ub-fuera-{nombre} {{
+      0%, 60% {{ opacity: 1; }}
+      100% {{ opacity: 0; visibility: hidden; pointer-events: none; }}
+  }}
+  @keyframes ub-dentro-{nombre} {{
+      0%, 60% {{ opacity: 0; }}
+      100% {{ opacity: 1; }}
+  }}
+</style>
+"""
+
+
 def portada() -> str:
     """Pantalla de carga con la chincheta y el nombre (maqueta, lámina 2)."""
     return (
-        f'<div class="ub-carga">{chincheta(120)}'
+        f'{_css_carga("portada")}<div class="ub-carga ub-carga-portada">'
+        f'{chincheta(120)}'
         '<div class="ub-carga-titulo"><span>U</span>-BÍCATE</div></div>'
     )
 
@@ -366,7 +384,7 @@ def bienvenida(dir_assets: Path) -> str:
     uri = mascota(dir_assets, MASCOTA_CUERPO)
     figura = f'<img src="{uri}" alt="Mascota de U-bícate">' if uri else chincheta(110)
     return (
-        '<div class="ub-carga">'
+        f'{_css_carga("bienvenida")}<div class="ub-carga ub-carga-bienvenida">'
         '<div class="ub-carga-titulo">¡BIENVENIDO!</div>'
         f"{figura}</div>"
     )

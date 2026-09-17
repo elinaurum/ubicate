@@ -146,15 +146,17 @@ def _plano(repo, destino) -> None:
     alto = recursos.settings().mapa_alto_px
 
     if estado.modo_desarrollo():
+        # El plano se muestra de entrada, sin esperar a que se busque una sala:
+        # es lo que se está construyendo y es a lo que se entra a mirar. Si el
+        # destino buscado está en otro piso, se cae al único levantado.
         planta = repo.planta_de(destino) if destino is not None else None
         if planta is None:
-            st.info(
-                "Versión en desarrollo: acá solo se muestra el plano interior, y por "
-                "ahora el único levantado es el piso -1 del edificio 851. Busca una "
-                "sala de ese piso (B01 a B09) para verlo."
-            )
-            return
-        resaltar_id = destino.id if destino.sala is not None else None
+            plantas = repo.plantas()
+            if not plantas:
+                st.info("Todavía no hay ningún plano interior levantado.")
+                return
+            planta = plantas[0]
+        resaltar_id = destino.id if destino is not None and destino.sala is not None else None
         components.html(
             recursos.mapa_interior_cacheado(planta.id, resaltar_id),
             height=alto,

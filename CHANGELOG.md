@@ -15,6 +15,42 @@ desplegar.
 
 ---
 
+## [2.5.0] — 2026-09-17
+
+Pantallas de carga arregladas, plano de entrada y la suite de pruebas completa
+en verde.
+Nota completa: [ACT-016](docs/actualizaciones/ACT-016-pantallas-de-carga-mapa-de-entrada-y-ci-verde.md).
+
+### Corregido
+
+* **`make ci` vuelve a pasar completo** (79 pruebas, sin exclusiones).
+  `tests/test_proveedores.py` llevaba varias entregas bloqueando la suite: no
+  era un import roto, era que **`config_pensamiento` nunca se implementó** y
+  con ella faltaban dos comportamientos que las pruebas ya especificaban.
+* **`UBICATE_NIVEL_PENSAMIENTO` ahora hace algo.** Estaba documentada en la
+  configuración pero no la usaba nadie. Limita cuánto razona Gemini antes de
+  contestar, que es presupuesto que se le quita a la respuesta visible.
+* **Si el modelo rechaza esa opción, se sigue sin ella** en vez de dejar al
+  usuario sin respuesta por un ajuste opcional.
+* **Reintento ante respuesta cortada.** Se detecta también cuando el texto
+  llega a medias aunque el proveedor la declare completa, que es lo que hace
+  Gemini. Si vuelve cortada, el error explica que conviene subir
+  `UBICATE_MAX_TOKENS`.
+* **La portada no tapaba la pantalla de acceso**: sus estilos vivían en el CSS
+  general, que esa pantalla no inyecta.
+* **La bienvenida aparecía ya desvanecida**: Streamlit reutiliza el mismo nodo
+  para las dos pantallas y, con el mismo nombre de animación, el navegador la
+  daba por consumida. Cada pantalla trae ahora su propia animación.
+* Una prueba leía el `.env` de quien la corriera, así que fallaba en cualquier
+  máquina con API key configurada sin que hubiera nada roto.
+
+### Cambiado
+
+* **El plano del 851 se muestra de entrada** en la versión de desarrollo, sin
+  tener que buscar una sala primero.
+
+---
+
 ## [2.4.0] — 2026-09-17
 
 Legibilidad del chat, pantallas de carga y un solo mapa por versión.

@@ -52,6 +52,72 @@ def con_reintento(llamada, intentos: int = 3, espera_base: float = 1.5):
     raise RuntimeError("inalcanzable")
 
 
+# Palabras que Gemini acepta como nivel de pensamiento; cualquier otro valor
+# admitido por la configuración es un número, y se manda como presupuesto de
+# tokens ("0" = no razones nada, "-1" = decide tú).
+NIVELES_PENSAMIENTO = frozenset({"minimal", "low", "medium", "high"})
+
+
+def config_pensamiento(settings: Settings) -> dict | None:
+    """Cuánto puede razonar el modelo antes de contestar, si su API lo permite.
+
+    Solo Gemini entiende esta configuración; mandársela a otro endpoint
+    compatible con OpenAI hace que rechace la petición entera. Devuelve
+    ``None`` cuando no hay nada que enviar: otro proveedor, o el valor "auto"
+    (que significa "el que traiga el proveedor por defecto").
+
+    Buscar una sala no necesita razonamiento, y ese razonamiento se descuenta
+    del mismo presupuesto de tokens que la respuesta visible (ver ACT-008).
+    """
+    if settings.proveedor_llm is not ProveedorLLM.GEMINI:
+        return None
+
+    nivel = (settings.nivel_pensamiento or "").strip()
+    if not nivel or nivel == "auto":
+        return None
+
+    if nivel in NIVELES_PENSAMIENTO:
+        pensamiento: dict[str, object] = {"thinking_level": nivel}
+    else:
+        try:
+            pensamiento = {"thinking_budget": int(nivel)}
+        except ValueError:  # pragma: no cover - la configuración ya lo valida
+            return None
+    return {"extra_body": {"google": {"thinking_config": pensamiento}}}
+
+
+# Con qué puede terminar una respuesta completa. El cierre puede ser un signo
+# de puntuación o la marca de lugar, que el prompt pide poner al final
+# (ADR-0002 / ADR-0007).
+CIERRES = (".", "!", "?", "…", ":", ")", '"', "»", "]]")
+
+# El modelo cortó la respuesta y lo dice. "stop" es el único final normal;
+# cualquier otra razón —incluida una que no conozcamos— se trata como corte.
+BLOQUEOS = {"content_filter", "recitation", "safety"}
+
+
+def _esta_completa(texto: str, razon: str) -> bool:
+    """¿La respuesta llegó entera?
+
+    Se mira la razón que declara el proveedor **y** cómo termina el texto: con
+    Gemini a través del endpoint compatible llegan respuestas cortadas a media
+    frase que igual vienen marcadas como ``stop`` (ver ACT-008).
+    """
+    if razon and razon != "stop":
+        return False
+    return texto.rstrip().endswith(CIERRES)
+
+
+def _rechaza_pensamiento(exc: Exception) -> bool:
+    """¿El modelo rechazó la petición por la configuración de pensamiento?
+
+    No todos los modelos de Gemini la aceptan, y los que no la reconocen
+    responden 400 nombrando el campo. Se distingue por el nombre del campo y
+    no por el código: un 400 puede ser cualquier otra cosa.
+    """
+    return "thinking" in str(exc).lower()
+
+
 @dataclass(frozen=True, slots=True)
 class Mensaje:
     rol: str  # "user" | "assistant"
@@ -153,38 +219,90 @@ class ProveedorOpenAI:
         self.nombre = settings.proveedor_llm.value
         self._settings = settings
         self._cliente = OpenAI(api_key=settings.api_key, base_url=base_url)
+        # Se apaga solo si el modelo la rechaza, para no repetir el error en
+        # cada pregunta de la sesión.
+        self._pensamiento = config_pensamiento(settings)
 
     def responder(self, sistema: str, mensajes: list[Mensaje]) -> str:
         payload = [{"role": "system", "content": sistema}]
         payload += [{"role": m.rol, "content": m.texto} for m in mensajes]
-        try:
-            respuesta = con_reintento(
+        def pedir(extra: dict | None):
+            return con_reintento(
                 lambda: self._cliente.chat.completions.create(
                     model=self._settings.modelo_llm,
                     max_tokens=self._settings.max_tokens,
                     temperature=self._settings.temperatura,
                     messages=payload,
+                    **(extra or {}),
                 )
             )
-        except Exception as exc:  # pragma: no cover
-            raise ErrorProveedor(str(exc)) from exc
 
-        eleccion = respuesta.choices[0]
-        texto = (eleccion.message.content or "").strip()
-        razon = (getattr(eleccion, "finish_reason", "") or "").lower()
+        try:
+            respuesta = pedir(self._pensamiento)
+        except Exception as exc:
+            if not (self._pensamiento and _rechaza_pensamiento(exc)):
+                raise ErrorProveedor(str(exc)) from exc
+            # El modelo no acepta la configuración de pensamiento: se deja de
+            # mandar por el resto de la sesión y se reintenta sin ella, en vez
+            # de dejar al usuario sin respuesta por un ajuste opcional.
+            log.warning(
+                "el modelo %s rechazó la configuración de pensamiento; "
+                "se sigue sin ella: %s",
+                self._settings.modelo_llm,
+                exc,
+            )
+            self._pensamiento = None
+            try:
+                respuesta = pedir(None)
+            except Exception as segundo:
+                raise ErrorProveedor(str(segundo)) from segundo
 
-        if razon and razon != "stop":
-            log.warning("proveedor %s terminó con finish_reason=%r", self.nombre, razon)
-        if not texto:
-            raise ErrorProveedor(f"el modelo no devolvió texto (finish_reason={razon or 'desconocido'})")
-        # Gemini corta la generación cuando detecta que está copiando el
-        # contexto casi textual ("recitation"). El texto queda a media frase.
-        if razon in {"content_filter", "recitation", "safety"}:
+        texto, razon = self._leer(respuesta)
+        if razon in BLOQUEOS:
             raise ErrorProveedor(
                 f"el modelo bloqueó su propia respuesta (finish_reason={razon}); "
                 "suele pasar cuando repite el contexto textualmente en vez de reformularlo"
             )
-        return texto
+        if _esta_completa(texto, razon):
+            return texto
+
+        # Llegó cortada. Se pide una vez más antes de darse por vencido: suele
+        # ser un corte puntual, y devolver media frase es peor que reintentar.
+        log.warning(
+            "respuesta incompleta de %s (finish_reason=%r); reintentando",
+            self.nombre,
+            razon,
+        )
+        try:
+            respuesta = pedir(self._pensamiento)
+        except Exception as exc:
+            raise ErrorProveedor(str(exc)) from exc
+
+        texto, razon = self._leer(respuesta)
+        if razon in BLOQUEOS:
+            raise ErrorProveedor(
+                f"el modelo bloqueó su propia respuesta (finish_reason={razon}); "
+                "suele pasar cuando repite el contexto textualmente en vez de reformularlo"
+            )
+        if _esta_completa(texto, razon):
+            return texto
+
+        raise ErrorProveedor(
+            f"el modelo cortó la respuesta dos veces (finish_reason={razon or 'desconocido'}). "
+            "Si se repite, sube UBICATE_MAX_TOKENS: el presupuesto de tokens se "
+            "reparte entre el razonamiento y la respuesta visible."
+        )
+
+    def _leer(self, respuesta) -> tuple[str, str]:
+        """Texto y razón de término, ya normalizados."""
+        eleccion = respuesta.choices[0]
+        texto = (eleccion.message.content or "").strip()
+        razon = (getattr(eleccion, "finish_reason", "") or "").lower()
+        if not texto:
+            raise ErrorProveedor(
+                f"el modelo no devolvió texto (finish_reason={razon or 'desconocido'})"
+            )
+        return texto, razon
 
 
 def crear_proveedor(settings: Settings) -> Proveedor:
