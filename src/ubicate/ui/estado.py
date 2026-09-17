@@ -50,7 +50,9 @@ def inicializar() -> None:
     st.session_state.setdefault(Claves.CANDIDATOS, [])
     st.session_state.setdefault(Claves.ULTIMO_MENSAJE, 0.0)
     st.session_state.setdefault(Claves.CONTADOR, 0)
-    st.session_state.setdefault(Claves.VISTA, VISTA_CHAT)
+    # El mapa es la pantalla principal; al chat se entra desde el botón de
+    # la mascota (ADR-0011).
+    st.session_state.setdefault(Claves.VISTA, VISTA_MAPA)
     st.session_state.setdefault(Claves.ROL, None)
 
 
@@ -89,7 +91,7 @@ def salir() -> None:
     st.session_state[Claves.ROL] = None
     limpiar_conversacion()
     limpiar()
-    st.session_state[Claves.VISTA] = VISTA_CHAT
+    st.session_state[Claves.VISTA] = VISTA_MAPA
 
 
 def vista() -> str:

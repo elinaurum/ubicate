@@ -14,14 +14,16 @@ from __future__ import annotations
 import streamlit as st
 
 from ubicate.acceso import rol_para
-from ubicate.ui import estado, recursos
+from ubicate.ui import estado, recursos, tema
 
-FONDO = "#2C3E5C"
-ROJO = "#E63329"
-ROJO_OSCURO = "#C42A21"
-AZUL_SECUNDARIO = "#7391B5"
-BLANCO = "#FFFFFF"
-GRIS_TEXTO = "#9AA5B1"
+# La paleta es la de tema.py: aquí solo se le ponen nombres locales para que
+# el CSS de abajo se lea.
+FONDO = tema.NAVY
+ROJO = tema.ROJO
+ROJO_OSCURO = tema.ROJO_OSCURO
+AZUL_SECUNDARIO = tema.AZUL_MEDIO
+BLANCO = tema.BLANCO
+GRIS_TEXTO = tema.GRIS_TEXTO
 
 # Chincheta con la U, el mismo símbolo de la maqueta. Va como SVG en línea:
 # no agrega un archivo que cargar ni una petición más.

@@ -6,9 +6,26 @@ import streamlit as st
 
 from ubicate.chat.motor import Conversacion
 from ubicate.chat.prompts import SALUDO
-from ubicate.ui import estado, recursos
+from ubicate.ui import estado, recursos, tema
 
-AVATARES = {"user": "🧑‍🎓", "assistant": "🧭"}
+AVATAR_USUARIO = "🧑‍🎓"
+
+
+def _avatar(rol: str) -> str:
+    """El asistente usa la mascota; si no está el archivo, un emoji."""
+    if rol == "user":
+        return AVATAR_USUARIO
+    return tema.avatar_asistente(recursos.settings().dir_assets)
+
+
+def _marca_de_rol(rol: str) -> None:
+    """Deja una marca invisible para que el CSS pueda pintar cada burbuja.
+
+    Esta versión de Streamlit no distingue en el HTML un mensaje del asistente
+    de uno de quien pregunta, y sus clases `st-emotion-cache-…` cambian con
+    cada versión. La marca propia es estable (ver ui/tema.py).
+    """
+    st.markdown(f'<span class="ub-rol-{rol}"></span>', unsafe_allow_html=True)
 
 
 def _citas(mensaje) -> None:
@@ -49,16 +66,22 @@ def _botones_mapa(conversacion: Conversacion) -> None:
 
 
 def render() -> None:
-    st.subheader("Pregúntame")
+    if st.button("← Volver al mapa", key="ub_volver_mapa"):
+        estado.fijar_vista(estado.VISTA_MAPA)
+        st.rerun()
+
     conversacion = estado.conversacion()
 
-    contenedor = st.container(height=460)
+    contenedor = st.container(height=460, border=True)
     with contenedor:
+        st.markdown(tema.marca_tarjeta(), unsafe_allow_html=True)
         if not conversacion.mensajes:
-            with st.chat_message("assistant", avatar=AVATARES["assistant"]):
+            with st.chat_message("assistant", avatar=_avatar("assistant")):
+                _marca_de_rol("assistant")
                 st.markdown(SALUDO)
         for mensaje in conversacion.mensajes:
-            with st.chat_message(mensaje.rol, avatar=AVATARES.get(mensaje.rol)):
+            with st.chat_message(mensaje.rol, avatar=_avatar(mensaje.rol)):
+                _marca_de_rol(mensaje.rol)
                 st.markdown(mensaje.texto)
                 if mensaje.rol == "assistant":
                     _citas(mensaje)
@@ -79,9 +102,11 @@ def render() -> None:
     conversacion.agregar("user", consulta)
 
     with contenedor:
-        with st.chat_message("user", avatar=AVATARES["user"]):
+        with st.chat_message("user", avatar=_avatar("user")):
+            _marca_de_rol("user")
             st.markdown(consulta)
-        with st.chat_message("assistant", avatar=AVATARES["assistant"]):
+        with st.chat_message("assistant", avatar=_avatar("assistant")):
+            _marca_de_rol("assistant")
             with st.spinner("Buscando…"):
                 respuesta = recursos.motor().responder(consulta, conversacion)
             st.markdown(respuesta.texto)

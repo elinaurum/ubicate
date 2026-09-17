@@ -9,10 +9,8 @@ import streamlit as st
 
 from ubicate.acceso import Rol
 from ubicate.datos.repositorio import ErrorDatos
-from ubicate.ui import estado, recursos
+from ubicate.ui import estado, recursos, tema
 from ubicate.ui.componentes import barra_lateral, panel_chat, panel_mapa, pantalla_acceso
-
-_ETIQUETA_VISTA = {estado.VISTA_CHAT: "💬 Preguntar", estado.VISTA_MAPA: "🗺️ Mapa"}
 
 
 def main() -> None:
@@ -49,31 +47,18 @@ def main() -> None:
 
     barra_lateral.render()
 
-    st.title("U-bícate")
-    st.caption(
-        "Pregunta en lenguaje natural o busca directamente en el plano. "
-        "Respondo solo con información verificada de la FCFM."
+    st.markdown(tema.CSS, unsafe_allow_html=True)
+    st.markdown(tema.cabecera(), unsafe_allow_html=True)
+    st.markdown(
+        '<div class="ub-bajada">Pregunta en lenguaje natural o busca en el plano. '
+        "Respondo solo con información verificada de la FCFM.</div>",
+        unsafe_allow_html=True,
     )
 
-    # Navegación entre las dos vistas. La fuente de verdad es el estado de
-    # sesión, no el widget: el chat puede cambiar la vista a "mapa" al encontrar
-    # un lugar. Para que el selector siga a ese cambio sin pelear con Streamlit,
-    # su `key` incluye la vista actual: cuando el estado cambia, el widget se
-    # reconstruye y toma `default`. Cuando es el usuario quien pulsa, la
-    # elección difiere del estado y lo actualizamos.
+    # Navegación (ADR-0011): el mapa es la pantalla principal y al chat se
+    # entra desde el botón de la mascota. Cada panel pone su propia salida, así
+    # que aquí solo se despacha lo que diga el estado.
     vista_actual = estado.vista()
-    eleccion = st.segmented_control(
-        "Vista",
-        options=[estado.VISTA_CHAT, estado.VISTA_MAPA],
-        format_func=_ETIQUETA_VISTA.get,
-        default=vista_actual,
-        key=f"ub_vista_widget_{vista_actual}",
-        label_visibility="collapsed",
-        width="stretch",
-    )
-    if eleccion and eleccion != vista_actual:
-        estado.fijar_vista(eleccion)
-        st.rerun()
 
     if vista_actual == estado.VISTA_MAPA:
         panel_mapa.render()

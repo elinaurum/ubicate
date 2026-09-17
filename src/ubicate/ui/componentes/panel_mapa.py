@@ -8,7 +8,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from ubicate.busqueda.buscador import EstadoBusqueda
-from ubicate.ui import estado, recursos
+from ubicate.ui import estado, recursos, tema
 
 
 def _resolver_busqueda(consulta: str) -> None:
@@ -60,25 +60,47 @@ def _selector_origen() -> None:
     )
 
 
+def _buscador() -> str | None:
+    """Campo de destino con sugerencias mientras se escribe.
+
+    Es un ``selectbox`` y no un ``text_input`` porque Streamlit solo filtra
+    opciones mientras se teclea en el primero: es la lista desplegable de la
+    maqueta. Con ``accept_new_options`` se conserva lo que ya hacía el buscador
+    —escribir cualquier cosa y que la resuelva la búsqueda tolerante a erratas—,
+    así que se gana el autocompletado sin perder "biblioteka".
+    """
+    repo = recursos.repositorio()
+    etiquetas = {etiqueta: cid for cid, etiqueta in repo.catalogo_mapeable()}
+
+    eleccion = st.selectbox(
+        "Ingresa tu destino",
+        options=list(etiquetas),
+        index=None,
+        placeholder="Ingresa tu destino",
+        accept_new_options=True,
+        label_visibility="collapsed",
+        key="ub_input_mapa",
+    )
+    if eleccion is None:
+        return None
+    # Si es una opción del catálogo, ya sabemos el id: no hace falta buscar.
+    if eleccion in etiquetas:
+        estado.fijar_destino(etiquetas[eleccion])
+        return None
+    return eleccion
+
+
 def render() -> None:
     repo = recursos.repositorio()
-    st.subheader("Mapa del campus")
 
-    col_busqueda, col_limpiar = st.columns([5, 1])
-    with col_busqueda:
-        consulta = st.text_input(
-            "Buscar sala o edificio",
-            placeholder="B04, Física, Auditorio Gorbea, biblioteca…",
-            label_visibility="collapsed",
-            key="ub_input_mapa",
-        )
-    with col_limpiar:
-        if st.button("Limpiar", use_container_width=True):
-            estado.limpiar()
-            st.rerun()
-
+    consulta = _buscador()
     if consulta:
         _resolver_busqueda(consulta)
+
+    # El acceso al chat va arriba, no flotando bajo el mapa como en la maqueta:
+    # el plano es alto y ahí el botón queda fuera de pantalla sin desplazarse
+    # (ACT-014).
+    _acciones()
 
     _selector_origen()
 
@@ -106,6 +128,7 @@ def render() -> None:
     if destino is not None:
         ruta = repo.ruta(destino, estado.origen_id())
         with st.container(border=True):
+            st.markdown(tema.marca_tarjeta(), unsafe_allow_html=True)
             st.markdown(f"**{destino.etiqueta}**")
             st.caption(f"Partiendo desde {ruta.origen.nombre}")
             st.write(destino.detalle)
@@ -133,3 +156,22 @@ def render() -> None:
         "El plano es una vista cenital: la altura (piso, torre) se indica en el texto. "
         "Ver limitación M1 en la documentación."
     )
+
+
+def _acciones() -> None:
+    """Salidas del mapa: preguntarle al asistente y limpiar lo buscado."""
+    assets = recursos.settings().dir_assets
+    st.markdown(tema.css_mascota(assets), unsafe_allow_html=True)
+    st.markdown(tema.marca_mascota(), unsafe_allow_html=True)
+    if st.button(
+        "Pregúntame lo que necesites",
+        key="ub_abrir_chat",
+        use_container_width=True,
+        type="primary",
+    ):
+        estado.fijar_vista(estado.VISTA_CHAT)
+        st.rerun()
+
+    if estado.destino_id() and st.button("Limpiar", use_container_width=True):
+        estado.limpiar()
+        st.rerun()

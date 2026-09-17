@@ -15,6 +15,50 @@ desplegar.
 
 ---
 
+## [2.3.0] — 2026-09-17
+
+La navegación de la maqueta, sugerencias al escribir y la mascota.
+Nota completa: [ACT-014](docs/actualizaciones/ACT-014-navegacion-de-la-maqueta-y-sugerencias.md).
+Decisión: [ADR-0011](docs/decisiones/ADR-0011-el-mapa-como-pantalla-principal.md).
+
+### Cambiado
+
+* **El mapa es la pantalla principal.** Se elimina el selector
+  "Preguntar / Mapa": al chat se entra con el botón de la mascota y se vuelve
+  con "← Volver al mapa". ADR-0011 supera a ADR-0006 en el control de
+  navegación; su fundamento —una vista a la vez, para el teléfono— sigue igual.
+* **El buscador sugiere mientras escribes.** Escribir "B0" despliega B01–B09.
+  Se puede seguir escribiendo cualquier cosa: lo que no esté en el catálogo lo
+  resuelve la búsqueda tolerante a erratas de siempre.
+
+### Agregado
+
+* **La mascota** como avatar del asistente y dentro del botón que abre el chat.
+  Si el archivo no está en `assets/`, la aplicación funciona igual: el avatar
+  cae al emoji y el botón se ve sin imagen.
+
+---
+
+## [2.2.0] — 2026-09-17
+
+La aplicación completa toma la identidad visual de la maqueta del equipo.
+Nota completa: [ACT-013](docs/actualizaciones/ACT-013-identidad-visual-de-la-maqueta.md).
+
+### Cambiado
+
+* **Toda la aplicación sigue la maqueta**: fondo azul noche, chincheta con la U
+  en la cabecera, tarjetas blancas para la conversación y la ficha del destino,
+  campos y botones en pastilla, burbujas del asistente en azul y de quien
+  pregunta en gris.
+* `.streamlit/config.toml`: el tema base de Streamlit con los mismos colores.
+
+### Agregado
+
+* `ui/tema.py`: la paleta, la chincheta y el CSS de la aplicación en un solo
+  lugar. Cambiar el rojo de la marca es editar una línea.
+
+---
+
 ## [2.1.0] — 2026-09-17
 
 Pantalla de acceso con clave compartida, mientras no hay cuentas.

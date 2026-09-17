@@ -7,9 +7,13 @@ maxUploadSize = 5
 [browser]
 gatherUsageStats = false
 
+# Los mismos valores que src/ubicate/ui/tema.py. Si cambias uno, cambia el otro.
 [theme]
-base = "light"
-primaryColor = "#1F6FB2"
+base = "dark"
+primaryColor = "#E63329"
+backgroundColor = "#2C3E5C"
+secondaryBackgroundColor = "#3A4E70"
+textColor = "#FFFFFF"
 
 [client]
 showErrorDetails = false
